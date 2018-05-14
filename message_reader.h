@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <boost/array.hpp>
 #include "arg_stream.h"
+#include "fixed_messages.h"
 
 class message_reader
 {
@@ -21,9 +22,6 @@ private:
 
 	// spillover for when an arg gets segmented between process() calls.
 	std::vector<char> spillover_buffer;
-	// dictates the max size of an arg in bytes, not counting buffer passed into process().
-	// ignored if _is_internal is set to true.
-	static const int SPILLOVER_LIMIT = 1024;
 
 	// init message arguments so we know how long each message will be in bytes
 	void init_msg_args();

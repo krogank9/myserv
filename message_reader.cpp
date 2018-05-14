@@ -6,7 +6,7 @@ message_reader::message_reader(bool is_internal = false)
 	  cur_msg_args_index(0),
 	  _is_internal(is_internal)
 {
-	spillover_buffer.reserve(SPILLOVER_LIMIT);
+	spillover_buffer.reserve(MAX_SAFE_ARG_SIZE_BYTES);
 
 	init_msg_args();
 }

@@ -5,6 +5,8 @@
 #include <map>
 #include <vector>
 
+#define MAX_SAFE_ARG_SIZE_BYTES 1024
+
 // Message arg types
 
 #define ARG_UINT8 0

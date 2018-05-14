@@ -44,8 +44,10 @@
 #define MAP_MSG_ARGS(map, id, args)\
 {\
 	int args_arr[] = args;\
-	std::vector<int> args_vec( args_arr, args_arr + sizeof(args_arr)/sizeof(args_arr[0]) );\
-	map[id] = args_vec;\
+	if (sizeof(args_arr) > 0)\
+		map[id] = std::vector<int>( args_arr, args_arr + sizeof(args_arr)/sizeof(args_arr[0]) );\
+	else\
+		map[id] = std::vector<int>();\
 }
 
 #endif // FIXEDMESSAGES_H

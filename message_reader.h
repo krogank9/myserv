@@ -17,8 +17,9 @@ public:
 	bool process(char* data, size_t len);
 private:
 	// whether this is an internal connection to another server.
-	// if so, we can safely use an unlimited spillover for things like serializing entities.
-	bool _is_internal;
+	// if so, we can safely use an unlimited spillover for
+	// bandwidth heavy tasks like serializing entities.
+	bool is_internal;
 
 	// spillover for when an arg gets segmented between process() calls.
 	std::vector<char> spillover_buffer;

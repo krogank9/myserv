@@ -5,7 +5,7 @@
 #include <map>
 #include <vector>
 
-#define MAX_SAFE_ARG_SIZE_BYTES 1024
+#define MAX_SAFE_ARG_SIZE_BYTES (1024*5) // 5kb. This many bytes allocated per client
 
 // Message arg types
 

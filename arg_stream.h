@@ -31,7 +31,8 @@ public:
 	{
 		std::string str = "";
 		char *data = buffer.data();
-		while(rpos++ < buffer.size() && *data != 0)
+		char *end = data+length();
+		while(data != end && *data != 0)
 		{
 			str += *data;
 			data++;

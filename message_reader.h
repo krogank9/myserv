@@ -10,18 +10,28 @@
 class message_reader
 {
 public:
-	message_reader();
+	message_reader(bool is_internal);
 
-	void process();
-
-	boost::array<uint8_t, 1024>& get_buffer() { return buffer; }
+	// returns false if an invalid msg id is given or spillover_buffer is full.
+	bool process(char* data, size_t len);
 private:
-	boost::array<uint8_t, 1024> buffer;
+	// whether this is an internal connection to another server.
+	// if so, we can safely use an unlimited spillover for things like serializing entities.
+	bool _is_internal;
 
-	int next_type;
+	// spillover for when an arg gets segmented between process() calls.
+	std::vector<char> spillover_buffer;
+	// dictates the max size of an arg in bytes, not counting buffer passed into process().
+	// ignored if _is_internal is set to true.
+	static const int SPILLOVER_LIMIT = 1024;
 
 	// init message arguments so we know how long each message will be in bytes
 	void init_msg_args();
+
+	arg_stream cur_arg_stream;
+
+	std::vector<int> *cur_msg_args;
+	int cur_msg_args_index;
 
 	std::map< int, std::vector<int> > msg_args;
 };

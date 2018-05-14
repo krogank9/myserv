@@ -1,13 +1,17 @@
 #include "message_reader.h"
 #include "fixed_messages.h"
 
-message_reader::message_reader()
-	: next_type(ARG_UINT16) // first arg is always msg ID
+message_reader::message_reader(bool is_internal = false)
+	: cur_msg_args(NULL),
+	  cur_msg_args_index(0),
+	  _is_internal(is_internal)
 {
+	spillover_buffer.reserve(SPILLOVER_LIMIT);
+
 	init_msg_args();
 }
 
-void message_reader::process()
+bool message_reader::process(char* data, size_t len)
 {
 }
 

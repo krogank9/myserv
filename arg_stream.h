@@ -13,6 +13,7 @@ public:
 	int add_rpos(int x) { int old = rpos; rpos += x; return old; }
 	int length() { return buffer.size()-rpos; }
 	char *get_buffer() { return buffer.data()+rpos; }
+	void clear() { buffer.clear(); }
 
 	int8_t get_8() { return *((int8_t*)(buffer.data()+add_rpos(1))); }
 	int16_t get_16() { return *((int16_t*)(buffer.data()+add_rpos(2))); }

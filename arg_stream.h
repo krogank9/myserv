@@ -12,6 +12,7 @@ public:
 
 	int add_rpos(int x) { int old = rpos; rpos += x; return old; }
 	int length() { return buffer.size()-rpos; }
+	char *get_buffer() { return buffer.data()+rpos; }
 
 	int8_t get_8() { return *((int8_t*)(buffer.data()+add_rpos(1))); }
 	int16_t get_16() { return *((int16_t*)(buffer.data()+add_rpos(2))); }
@@ -29,7 +30,7 @@ public:
 	std::string get_string()
 	{
 		std::string str = "";
-		char *data = (char*)buffer.data();
+		char *data = buffer.data();
 		while(rpos++ < buffer.size() && *data != 0)
 		{
 			str += *data;
@@ -43,18 +44,26 @@ public:
 		return std::vector<uint8_t>(buffer.begin()+rpos, buffer.begin()+rpos+length());
 	}
 
-	void put_data(std::vector<uint8_t> data)
-	{
-		buffer.insert(buffer.end(), data.begin(), data.end());
-	}
+	void put_8(int8_t n) { put_data((char*)&n, 1); }
+	void put_16(int16_t n) { put_data((char*)&n, 2); }
+	void put_32(int32_t n) { put_data((char*)&n, 4); }
+	void put_64(int64_t n) { put_data((char*)&n, 8); }
 
-	void put_data(uint8_t* data, size_t len)
-	{
-		put_data(std::vector<uint8_t>(data, data+len));
-	}
+	void put_u8(uint8_t n) { put_data((char*)&n, 1); }
+	void put_u16(uint16_t n) { put_data((char*)&n, 2); }
+	void put_u32(uint32_t n) { put_data((char*)&n, 4); }
+	void put_u64(uint64_t n) { put_data((char*)&n, 8); }
+
+	void put_float(float n) { put_data((char*)&n, 4); }
+	void put_double(double n) { put_data((char*)&n, 8); }
+
+	void put_string(std::string str) { put_data((char*)str.c_str(), str.length()+1/* +1 for \0 */); }
+
+	void put_data(std::vector<char> data) { buffer.insert(buffer.end(), data.begin(), data.end()); }
+	void put_data(char* src, size_t len) { buffer.insert(buffer.end(), src, src+len); }
 
 private:
-	std::vector<uint8_t> buffer;
+	std::vector<char> buffer;
 	int rpos;
 };
 

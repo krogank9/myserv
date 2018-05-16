@@ -216,12 +216,12 @@ bool message_reader::process(char* data, size_t len)
 		while (cur_msg_args_index < cur_msg_args_ptr->size() && read_cur_type_to_args_stream())
 		{
 			READ_RESULT result = read_cur_type_to_args_stream();
-			if (result == READ_RESULT::ERROR)
-				return false;
+			if (result == READ_RESULT::SUCCESS)
+				cur_msg_args_index++;
 			else if (result == READ_RESULT::NEED_READ_MORE)
 				break;
-			else// if (result == READ_RESULT::SUCCESS)
-				cur_msg_args_index++;
+			else if (result == READ_RESULT::ERROR)
+				return false;
 		}
 	}
 

@@ -40,9 +40,11 @@ public:
 		return str;
 	}
 
-	std::vector<uint8_t> get_data(size_t len)
+	std::vector<char> get_blob()
 	{
-		return std::vector<uint8_t>(buffer.begin()+rpos, buffer.begin()+rpos+length());
+		uint16_t len = 0;
+		len = get_u16();
+		return std::vector<char>(get_buffer(), get_buffer()+len);
 	}
 
 	void put_8(int8_t n) { put_data((char*)&n, 1); }
@@ -59,6 +61,8 @@ public:
 	void put_double(double n) { put_data((char*)&n, 8); }
 
 	void put_string(std::string str) { put_data((char*)str.c_str(), str.length()+1/* +1 for \0 */); }
+
+	void put_blob(char* data, uint16_t len) { put_data(&len, sizeof(uint16_t)); put_data(data, len); }
 
 	void put_data(std::vector<char> data) { buffer.insert(buffer.end(), data.begin(), data.end()); }
 	void put_data(char* src, size_t len) { buffer.insert(buffer.end(), src, src+len); }

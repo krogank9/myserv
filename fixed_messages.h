@@ -9,6 +9,9 @@
 
 // Message arg types
 
+typedef uint16_t MSG_ID;
+typedef uint8_t ARG_TYPE;
+
 #define ARG_UINT8 0
 #define ARG_UINT16 1
 #define ARG_UINT32 2
@@ -26,7 +29,7 @@
 #define ARG_ARRAY 11 // uint64_t (size) prefixed, list of elements each prefixed by uint8_t type
 #define ARG_DICT 12 // uint64_t (size) prefixed, list of (string, element prefixed by uint8_t type) pairs
 
-#define ARG_BLOB 13 // uint64_t (size) prefixed, arbitrary data blob
+#define ARG_BLOB 13 // uint16_t (size) prefixed, arbitrary data blob
 
 // Client <-> Server messages
 

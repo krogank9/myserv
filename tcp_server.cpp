@@ -9,6 +9,13 @@ tcp_server::tcp_server(boost::asio::io_service& io_service, int port, game_serve
 		start_accept();
 }
 
+tcp_server::~tcp_server()
+{
+	std::vector<tcp_connection*> it = client_list.begin();
+	for (;it != client_list.end(); i++)
+		delete *it;
+}
+
 void tcp_server::start_accept()
 {
 	tcp_connection *new_connection = new tcp_connection(acceptor_.get_io_service(), (message_handler*)parent_game_server_ptr, this);

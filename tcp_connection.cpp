@@ -14,10 +14,12 @@ std::string tcp_connection::make_daytime_string()
 
 // class functions
 
-tcp_connection::tcp_connection(boost::asio::io_service& io_service, message_handler* message_handler_ptr, tcp_server *server_ptr)
+tcp_connection::tcp_connection(boost::asio::io_service& io_service, message_handler* message_handler_ptr,
+							   bool peer_is_server_, tcp_connection_manager* manager_ptr)
 	: socket_(io_service),
-	  parent_server_ptr(server_ptr),
-	  message_reader_(message_handler_ptr, this)
+	  message_reader_(message_handler_ptr, this),
+	  peer_is_server_(peer_is_server_),
+	  manager_ptr(manager_ptr)
 {
 }
 
@@ -39,6 +41,6 @@ void tcp_connection::start()
 
 void tcp_connection::handle_write(const boost::system::error_code& /*error*/, size_t /*bytes_transferred*/)
 {
-	if (parent_server_ptr != NULL)
-		parent_server_ptr->connection_closed(this);
+	if (manager_ptr != NULL)
+		manager_ptr->connection_closed(this);
 }

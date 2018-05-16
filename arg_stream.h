@@ -10,7 +10,6 @@ class arg_stream
 public:
 	arg_stream() { buffer.reserve(128); }
 
-	int add_rpos(int x) { int old = rpos; rpos += x; return old; }
 	int length() { return buffer.size()-rpos; }
 	char *get_buffer() { return buffer.data()+rpos; }
 	void clear() { buffer.clear(); }
@@ -65,6 +64,7 @@ public:
 	void put_data(char* src, size_t len) { buffer.insert(buffer.end(), src, src+len); }
 
 private:
+	int add_rpos(int x) { int old = rpos; rpos += x; return old; }
 	std::vector<char> buffer;
 	int rpos;
 };

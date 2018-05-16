@@ -1,15 +1,17 @@
 #include "tcp_server.h"
+#include "message_reader.h"
 #include <iostream>
 
-tcp_server::tcp_server(boost::asio::io_service& io_service, int port)
-	: acceptor_(io_service, tcp::endpoint(tcp::v4(), port))
+tcp_server::tcp_server(boost::asio::io_service& io_service, int port, game_server* game_server_ptr)
+	: acceptor_(io_service, tcp::endpoint(tcp::v4(), port)),
+	  parent_game_server_ptr(game_server_ptr)
 {
 		start_accept();
 }
 
 void tcp_server::start_accept()
 {
-	tcp_connection *new_connection = new tcp_connection(acceptor_.get_io_service(), this);
+	tcp_connection *new_connection = new tcp_connection(acceptor_.get_io_service(), (message_handler*)parent_game_server_ptr, this);
 	client_list.insert(new_connection);
 
 	acceptor_.async_accept(new_connection->socket(),

@@ -5,7 +5,7 @@
 #include <map>
 #include <vector>
 
-#define MAX_SAFE_ARG_SIZE_BYTES (1024*5) // 5kb. This many bytes allocated per client
+#define MAX_SAFE_ARG_SIZE_BYTES (1024*5) // 5kb. Note: This many bytes allocated per client
 
 // Message arg types
 
@@ -42,7 +42,7 @@
 #define SMSG_TICK 1
 #define SMSG_TICK_ARGS {}
 
-// set map id key to a _ARGS vector from above
+// set map id key to a vector from _ARGS from above
 #define MAP_MSG_ARGS(map, id, args)\
 {\
 	int args_arr[] = args;\
@@ -53,3 +53,4 @@
 }
 
 #endif // FIXEDMESSAGES_H
+

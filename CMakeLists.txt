@@ -14,6 +14,10 @@ if(Boost_FOUND)
 	add_executable(client "main_client.cpp")
 	target_link_libraries(client ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
-	add_executable(${PROJECT_NAME} "main_server.cpp" "tcp_server.cpp" "tcp_connection.cpp" "message_reader.cpp" "arg_stream.h")
+	add_executable(${PROJECT_NAME}
+		"main_server.cpp" "tcp_server.cpp" "tcp_connection.cpp"
+		"message_reader.cpp" "game_server.cpp" "entity.cpp"
+		# headers added to compile so Qt Creator will manage them:
+		"arg_stream.h" "fixed_messages.h")
 	target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 endif()

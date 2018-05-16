@@ -220,7 +220,7 @@ bool message_reader::process(char* data, size_t len)
 				cur_msg_args_index++;
 			else if (result == READ_RESULT::NEED_READ_MORE)
 				break;
-			else if (result == READ_RESULT::ERROR)
+			else// if (result == READ_RESULT::ERROR)
 				return false;
 		}
 	}

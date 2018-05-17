@@ -74,7 +74,7 @@ int message_reader::find_in_buffer(char c)
 	return -1;
 }
 
-/*---------------*/
+/*--------------*/
 // args reading //
 /*--------------*/
 
@@ -207,7 +207,7 @@ message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE ne
 			skip_read_buffer(sizeof(ARG_TYPE)); // skip type we peeked
 
 		cur_arg_stream.put_u8(prop_type);
-		read_type_to_args_stream(prop_type);
+		return read_type_to_args_stream(prop_type);
 	}
 	// CONTAINERS
 	else if (next_type == ARG_ARRAY)
@@ -238,6 +238,10 @@ message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE ne
 	return READ_RESULT::SUCCESS;
 }
 
+/*------------------------------------*/
+// continue reading message from data //
+/*------------------------------------*/
+
 bool message_reader::process(char* data, size_t len)
 {
 	if (!write_to_buffer(data, len))
@@ -266,6 +270,8 @@ bool message_reader::process(char* data, size_t len)
 			if (result == READ_RESULT::SUCCESS)
 			{
 				msg_args_index_stack.back()++;
+				if (msg_args_index_stack.back() >= msg_args_stack.back().size())
+					msg_args_stack.pop_back();
 			}
 			else if (result == READ_RESULT::NEED_READ_MORE)
 				break;

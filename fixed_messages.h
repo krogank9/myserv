@@ -31,6 +31,8 @@ typedef uint8_t ARG_TYPE;
 
 #define ARG_BLOB 13 // uint16_t (size) prefixed, arbitrary data blob
 
+#define ARG_PROP 14 // ARG_TYPE prefixed followed by corresponding ARG_*
+
 // Client <-> Server messages
 
 #define CMSG_HELLO 0

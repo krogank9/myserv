@@ -16,7 +16,7 @@ if(Boost_FOUND)
 
 	add_executable(${PROJECT_NAME}
 		"main_server.cpp" "tcp_server.cpp" "tcp_connection.cpp"
-		"message_reader.cpp" "game_server.cpp"
+		"message_reader.cpp" "game_server.cpp" "property.cpp"
 		# headers added to compile so Qt Creator will manage them:
 		"arg_stream.h" "fixed_messages.h")
 	target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})

@@ -53,7 +53,7 @@ private:
 
 	arg_stream cur_arg_stream;
 
-	std::vector<MSG_ID>* cur_msg_args_ptr;
+	std::vector< std::vector<MSG_ID> > msg_args_stack;
 	int cur_msg_args_index;
 
 	MSG_ID cur_msg_id;

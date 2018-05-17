@@ -26,10 +26,10 @@ typedef uint8_t ARG_TYPE;
 #define ARG_DOUBLE 9 // 64 bit IEEE floating point
 
 #define ARG_STRING 10 // null terminated ascii string
-#define ARG_ARRAY 11 // uint64_t (size) prefixed, list of elements each prefixed by uint8_t type
-#define ARG_DICT 12 // uint64_t (size) prefixed, list of (string, element prefixed by uint8_t type) pairs
+#define ARG_BLOB 11 // uint16_t (size) prefixed, arbitrary data blob
 
-#define ARG_BLOB 13 // uint16_t (size) prefixed, arbitrary data blob
+#define ARG_ARRAY 13 // uint16_t (size) prefixed, list of elements each prefixed by uint8_t type
+#define ARG_DICT 12 // uint16_t (size) prefixed, list of (ARG_PROP, ARG_PROP) pairs
 
 #define ARG_PROP 14 // ARG_TYPE prefixed followed by corresponding ARG_*
 

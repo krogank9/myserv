@@ -2,8 +2,7 @@
 #include "fixed_messages.h"
 
 message_reader::message_reader(message_handler* handler_ptr, tcp_connection* tcp_connection_ptr)
-	: cur_msg_args_ptr(NULL),
-	  cur_msg_args_index(0),
+	: cur_msg_args_index(0),
 	  handler_ptr(handler_ptr),
 	  parent_tcp_connection_ptr(tcp_connection_ptr),
 	  rpos(0),
@@ -32,6 +31,7 @@ bool message_reader::write_to_buffer(char* data, size_t len)
 	}
 
 	wpos += len;
+	return true;
 }
 
 bool message_reader::read_from_buffer(char* dest, size_t len)
@@ -57,6 +57,7 @@ bool message_reader::read_from_buffer(char* dest, size_t len)
 	// normalize after read to prevent int overflow
 	rpos %= buffer_capacity;
 	wpos %= buffer_capacity;
+	return true;
 }
 
 int message_reader::find_in_buffer(char c)
@@ -72,7 +73,7 @@ int message_reader::find_in_buffer(char c)
 
 message_reader::READ_RESULT message_reader::read_cur_type_to_args_stream()
 {
-	ARG_TYPE cur_type = cur_msg_args_ptr[cur_msg_args_index];
+	ARG_TYPE cur_type = msg_args_stack.back()[cur_msg_args_index];
 	// ARG_UINT*
 	if (cur_type == ARG_UINT8)
 	{

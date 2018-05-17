@@ -2,8 +2,7 @@
 #include "fixed_messages.h"
 
 message_reader::message_reader(message_handler* handler_ptr, tcp_connection* tcp_connection_ptr)
-	: cur_msg_args_index(0),
-	  handler_ptr(handler_ptr),
+	: handler_ptr(handler_ptr),
 	  parent_tcp_connection_ptr(tcp_connection_ptr),
 	  rpos(0),
 	  wpos(0),
@@ -202,8 +201,8 @@ bool message_reader::process(char* data, size_t len)
 	if (cur_msg_args_ptr == NULL && buffer_can_read(sizeof(MSG_ID)))
 	{
 		read_from_buffer(&cur_msg_id, sizeof(MSG_ID));
-		cur_msg_args_ptr = handler_ptr->get_msg_args_by_id(cur_msg_id);
-		cur_msg_args_index = 0;
+		msg_args_stack.push_back(handler_ptr->get_msg_args_by_id(cur_msg_id));
+		msg_args_index_stack.push_back(0);
 		cur_arg_stream.clear();
 
 		// invalid message ID read from network

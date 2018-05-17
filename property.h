@@ -12,40 +12,7 @@ class property
 public:
 	property() : cur_type(ARG_UINT8) { set_u8(0); }
 
-	property(const property& copy) : cur_type(ARG_UINT8)
-	{
-		if (copy.is_int())
-		{
-			value.i64 = copy.get_64();
-			cur_type = copy.get_type();
-		}
-		else if (copy.is_uint())
-		{
-			value.u64 = copy.get_u64();
-			cur_type = copy.get_type();
-		}
-		else if (copy.is_float() || copy.is_double())
-		{
-			value.d = copy.get_double();
-			cur_type = copy.get_type();
-		}
-		else if (copy.is_string())
-		{
-			set_string(copy.get_string());
-		}
-		else if (copy.is_blob())
-		{
-			set_blob(copy.get_blob());
-		}
-		else if (copy.is_array())
-		{
-			set_array(copy.get_array());
-		}
-		else if(copy.is_dict())
-		{
-			set_dict(copy.get_dict());
-		}
-	}
+	property(const property& copy) : cur_type(ARG_UINT8) { set(copy); }
 
 	property(uint8_t v) : cur_type(ARG_UINT8) { set_u8(v); }
 	property(uint16_t v) : cur_type(ARG_UINT8) { set_u16(v); }
@@ -152,8 +119,9 @@ public:
 		return tmp_lhs + tmp_rhs;
 	}
 
-	property& operator+=(const property& rhs) { return *this + rhs; }
-	property& operator-=(const property& rhs) { return *this - rhs; }
+	property& operator=(const property& rhs) { set(rhs); return *this; }
+	property& operator+=(const property& rhs) { return (*this = *this + rhs); }
+	property& operator-=(const property& rhs) { return (*this = *this - rhs); }
 	property& operator++() { return *this + property(1); }
 	property& operator--() { return *this - property(1); }
 
@@ -196,6 +164,41 @@ public:
 	}
 
 	////////////////////////////////////////////////////////////
+
+	void set(property &copy)
+	{
+		if (copy.is_int())
+		{
+			set_64(copy.get_64());
+			cur_type = copy.get_type();
+		}
+		else if (copy.is_uint())
+		{
+			set_u64(copy.get_u64());
+			cur_type = copy.get_type();
+		}
+		else if (copy.is_float() || copy.is_double())
+		{
+			set_double(copy.get_double());
+			cur_type = copy.get_type();
+		}
+		else if (copy.is_string())
+		{
+			set_string(copy.get_string());
+		}
+		else if (copy.is_blob())
+		{
+			set_blob(copy.get_blob());
+		}
+		else if (copy.is_array())
+		{
+			set_array(copy.get_array());
+		}
+		else if(copy.is_dict())
+		{
+			set_dict(copy.get_dict());
+		}
+	}
 
 	void set_float(float f) { set_type(ARG_FLOAT); value.d = (double)f; }
 	void set_double(double d) { set_type(ARG_DOUBLE); value.d = d; }

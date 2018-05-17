@@ -14,7 +14,7 @@ class tcp_connection;
 
 class message_handler {
 	virtual bool call_network_interface(tcp_connection* originator, int msgID, arg_stream& args)=0;
-	virtual std::vector<ARG_TYPE>* get_msg_args_by_id(MSG_ID msgID)=0;
+	virtual std::vector<ARG_TYPE> get_msg_args_by_id(MSG_ID msgID)=0;
 };
 
 class message_reader
@@ -54,7 +54,7 @@ private:
 	arg_stream cur_arg_stream;
 
 	std::vector< std::vector<MSG_ID> > msg_args_stack;
-	int cur_msg_args_index;
+	std::vector<int> msg_args_index_stack;
 
 	MSG_ID cur_msg_id;
 

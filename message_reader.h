@@ -56,7 +56,7 @@ private:
 	size_t wpos;
 
 	enum class READ_RESULT { SUCCESS, ERROR, NEED_READ_MORE };
-	READ_RESULT read_cur_type_to_args_stream();
+	READ_RESULT read_type_to_args_stream(ARG_TYPE next_type);
 
 	std::vector<ARG_TYPE> make_array_args_list(ARG_TYPE type, int len)
 	{

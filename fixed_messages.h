@@ -33,6 +33,34 @@ typedef uint8_t ARG_TYPE;
 
 #define ARG_PROP 14 // uint8_t (ARG_TYPE) prefixed followed by corresponding ARG_*
 
+size_t ARG_SIZEOF(ARG_TYPE arg)
+{
+	// UINT
+	if (arg == ARG_UINT8)
+		return sizeof(uint8_t);
+	if (arg == ARG_UINT16)
+		return sizeof(uint16_t);
+	if (arg == ARG_UINT32)
+		return sizeof(uint32_t);
+	if (arg == ARG_UINT64)
+		return sizeof(uint64_t);
+	// INT
+	if (arg == ARG_INT8)
+		return sizeof(int8_t);
+	if (arg == ARG_INT16)
+		return sizeof(int16_t);
+	if (arg == ARG_INT32)
+		return sizeof(int32_t);
+	if (arg == ARG_INT64)
+		return sizeof(int64_t);
+	// FLOAT/DOUBLE
+	if (arg == ARG_FLOAT)
+		return sizeof(float);
+	if (arg == ARG_DOUBLE)
+		return sizeof(double);
+	return 0;
+}
+
 // Client <-> Server messages
 
 #define CMSG_HELLO 0

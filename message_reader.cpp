@@ -78,12 +78,10 @@ int message_reader::find_in_buffer(char c)
 // args reading //
 /*--------------*/
 
-message_reader::READ_RESULT message_reader::read_cur_type_to_args_stream()
+message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE next_type)
 {
-	ARG_TYPE cur_type = msg_args_stack.back()[msg_args_index_stack.back()];
-
 	// ARG_UINT*
-	if (cur_type == ARG_UINT8)
+	if (next_type == ARG_UINT8)
 	{
 		if (!buffer_can_read(sizeof(uint8_t)))
 			return READ_RESULT::NEED_READ_MORE;
@@ -91,7 +89,7 @@ message_reader::READ_RESULT message_reader::read_cur_type_to_args_stream()
 		read_from_buffer(&x, sizeof(uint8_t));
 		cur_arg_stream.put_u8(x);
 	}
-	else if (cur_type == ARG_UINT16)
+	else if (next_type == ARG_UINT16)
 	{
 		if (!buffer_can_read(sizeof(uint16_t)))
 			return READ_RESULT::NEED_READ_MORE;
@@ -99,7 +97,7 @@ message_reader::READ_RESULT message_reader::read_cur_type_to_args_stream()
 		read_from_buffer(&x, sizeof(uint16_t));
 		cur_arg_stream.put_u16(x);
 	}
-	else if (cur_type == ARG_UINT32)
+	else if (next_type == ARG_UINT32)
 	{
 		if (!buffer_can_read(sizeof(uint32_t)))
 			return READ_RESULT::NEED_READ_MORE;
@@ -107,7 +105,7 @@ message_reader::READ_RESULT message_reader::read_cur_type_to_args_stream()
 		read_from_buffer(&x, sizeof(uint32_t));
 		cur_arg_stream.put_u32(x);
 	}
-	else if (cur_type == ARG_UINT64)
+	else if (next_type == ARG_UINT64)
 	{
 		if (!buffer_can_read(sizeof(uint64_t)))
 			return READ_RESULT::NEED_READ_MORE;
@@ -116,7 +114,7 @@ message_reader::READ_RESULT message_reader::read_cur_type_to_args_stream()
 		cur_arg_stream.put_u64(x);
 	}
 	// ARG_INT*
-	else if (cur_type == ARG_INT8)
+	else if (next_type == ARG_INT8)
 	{
 		if (!buffer_can_read(sizeof(int8_t)))
 			return READ_RESULT::NEED_READ_MORE;
@@ -124,7 +122,7 @@ message_reader::READ_RESULT message_reader::read_cur_type_to_args_stream()
 		read_from_buffer(&x, sizeof(int8_t));
 		cur_arg_stream.put_u8(x);
 	}
-	else if (cur_type == ARG_INT16)
+	else if (next_type == ARG_INT16)
 	{
 		if (!buffer_can_read(sizeof(int16_t)))
 			return READ_RESULT::NEED_READ_MORE;
@@ -132,7 +130,7 @@ message_reader::READ_RESULT message_reader::read_cur_type_to_args_stream()
 		read_from_buffer(&x, sizeof(int16_t));
 		cur_arg_stream.put_u16(x);
 	}
-	else if (cur_type == ARG_INT32)
+	else if (next_type == ARG_INT32)
 	{
 		if (!buffer_can_read(sizeof(int32_t)))
 			return READ_RESULT::NEED_READ_MORE;
@@ -140,7 +138,7 @@ message_reader::READ_RESULT message_reader::read_cur_type_to_args_stream()
 		read_from_buffer(&x, sizeof(int32_t));
 		cur_arg_stream.put_u32(x);
 	}
-	else if (cur_type == ARG_INT64)
+	else if (next_type == ARG_INT64)
 	{
 		if (!buffer_can_read(sizeof(int64_t)))
 			return READ_RESULT::NEED_READ_MORE;
@@ -149,7 +147,7 @@ message_reader::READ_RESULT message_reader::read_cur_type_to_args_stream()
 		cur_arg_stream.put_u64(x);
 	}
 	// ARG_(FLOAT + DOUBLE)
-	else if (cur_type == ARG_FLOAT)
+	else if (next_type == ARG_FLOAT)
 	{
 		if (!buffer_can_read(sizeof(float)))
 			return READ_RESULT::NEED_READ_MORE;
@@ -157,7 +155,7 @@ message_reader::READ_RESULT message_reader::read_cur_type_to_args_stream()
 		read_from_buffer(&x, sizeof(float));
 		cur_arg_stream.put_float(x);
 	}
-	else if (cur_type == ARG_DOUBLE)
+	else if (next_type == ARG_DOUBLE)
 	{
 		if (!buffer_can_read(sizeof(double)))
 			return READ_RESULT::NEED_READ_MORE;
@@ -166,7 +164,7 @@ message_reader::READ_RESULT message_reader::read_cur_type_to_args_stream()
 		cur_arg_stream.put_double(x);
 	}
 	// ARG_STRING
-	else if (cur_type == ARG_STRING)
+	else if (next_type == ARG_STRING)
 	{
 		int null_char_pos = find_in_buffer(0);
 		if (null_char_pos < 0)
@@ -178,7 +176,7 @@ message_reader::READ_RESULT message_reader::read_cur_type_to_args_stream()
 		cur_arg_stream.put_string(str_bytes);
 	}
 	// ARG_BLOB
-	else if (cur_type == ARG_BLOB)
+	else if (next_type == ARG_BLOB)
 	{
 		if (!buffer_can_read(sizeof(uint16_t)))
 			return READ_RESULT::NEED_READ_MORE;
@@ -195,7 +193,24 @@ message_reader::READ_RESULT message_reader::read_cur_type_to_args_stream()
 		read_from_buffer(data, total_len);
 		cur_arg_stream.put_blob(data, total_len);
 	}
-	else if (cur_type == ARG_ARRAY)
+	// TYPED PROPERTY
+	else if (next_type == ARG_PROP)
+	{
+		if (!buffer_can_read(sizeof(ARG_TYPE)))
+			return READ_RESULT::NEED_READ_MORE;
+		ARG_TYPE prop_type = ARG_UINT8;
+		peek_from_buffer(&prop_type, sizeof(ARG_TYPE));
+
+		if (!buffer_can_read(ARG_SIZEOF(type)))
+			return READ_RESULT::NEED_READ_MORE;
+		else
+			skip_read_buffer(sizeof(ARG_TYPE)); // skip type we peeked
+
+		cur_arg_stream.put_u8(prop_type);
+		read_type_to_args_stream(prop_type);
+	}
+	// CONTAINERS
+	else if (next_type == ARG_ARRAY)
 	{
 		if (!buffer_can_read(sizeof(uint16_t)))
 			return READ_RESULT::NEED_READ_MORE;
@@ -205,7 +220,7 @@ message_reader::READ_RESULT message_reader::read_cur_type_to_args_stream()
 		msg_args_stack.push_back(make_array_args_list(ARG_PROP,len));
 		msg_args_index_stack.push_back(0);
 	}
-	else if (cur_type == ARG_DICT)
+	else if (next_type == ARG_DICT)
 	{
 		if (!buffer_can_read(sizeof(uint16_t)))
 			return READ_RESULT::NEED_READ_MORE;
@@ -220,7 +235,6 @@ message_reader::READ_RESULT message_reader::read_cur_type_to_args_stream()
 		return READ_RESULT::ERROR;
 	}
 
-	msg_args_index_stack.back()++;
 	return READ_RESULT::SUCCESS;
 }
 
@@ -245,11 +259,14 @@ bool message_reader::process(char* data, size_t len)
 	// read arguments for cur_msg_id
 	if (cur_msg_args_ptr != NULL)
 	{
-		while (cur_msg_args_index < cur_msg_args_ptr->size() && read_cur_type_to_args_stream())
+		while (msg_args_index_stack.back() < cur_msg_args_ptr->size() && read_cur_type_to_args_stream())
 		{
-			READ_RESULT result = read_cur_type_to_args_stream();
+			ARG_TYPE next_type = msg_args_stack.back()[msg_args_index_stack.back()];
+			READ_RESULT result = read_type_to_args_stream(next_type);
 			if (result == READ_RESULT::SUCCESS)
-				cur_msg_args_index++;
+			{
+				msg_args_index_stack.back()++;
+			}
 			else if (result == READ_RESULT::NEED_READ_MORE)
 				break;
 			else// if (result == READ_RESULT::ERROR)

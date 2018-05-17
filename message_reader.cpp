@@ -10,6 +10,10 @@ message_reader::message_reader(message_handler* handler_ptr, tcp_connection* tcp
 {
 }
 
+/*------------------*/
+// bufer operations //
+/*------------------*/
+
 bool message_reader::write_to_buffer(char* data, size_t len)
 {
 	if (len > get_buffer_write_left())
@@ -70,9 +74,14 @@ int message_reader::find_in_buffer(char c)
 	return -1;
 }
 
+/*---------------*/
+// args reading //
+/*--------------*/
+
 message_reader::READ_RESULT message_reader::read_cur_type_to_args_stream()
 {
-	ARG_TYPE cur_type = msg_args_stack.back()[cur_msg_args_index];
+	ARG_TYPE cur_type = msg_args_stack.back()[msg_args_index_stack.back()];
+
 	// ARG_UINT*
 	if (cur_type == ARG_UINT8)
 	{
@@ -178,6 +187,8 @@ message_reader::READ_RESULT message_reader::read_cur_type_to_args_stream()
 
 		if (!buffer_can_read(len))
 			return READ_RESULT::NEED_READ_MORE;
+		else
+			skip_read_buffer(sizeof(uint16_t)); // skip len we peeked
 
 		size_t total_len = sizeof(uint16_t) + len; // include len bytes
 		char data[total_len];
@@ -185,10 +196,31 @@ message_reader::READ_RESULT message_reader::read_cur_type_to_args_stream()
 		cur_arg_stream.put_blob(data, total_len);
 	}
 	else if (cur_type == ARG_ARRAY)
-		;//todo
-	else if (cur_type == ARG_DICT)
-		;//todo
+	{
+		if (!buffer_can_read(sizeof(uint16_t)))
+			return READ_RESULT::NEED_READ_MORE;
+		uint16_t len = 0;
+		read_from_buffer(&len, sizeof(uint16_t));
 
+		msg_args_stack.push_back(make_array_args_list(ARG_PROP,len));
+		msg_args_index_stack.push_back(0);
+	}
+	else if (cur_type == ARG_DICT)
+	{
+		if (!buffer_can_read(sizeof(uint16_t)))
+			return READ_RESULT::NEED_READ_MORE;
+		uint16_t len = 0;
+		read_from_buffer(&len, sizeof(uint16_t));
+
+		msg_args_stack.push_back(make_dict_args_list(ARG_PROP, ARG_PROP, len));
+		msg_args_index_stack.push_back(0);
+	}
+	else
+	{
+		return READ_RESULT::ERROR;
+	}
+
+	msg_args_index_stack.back()++;
 	return READ_RESULT::SUCCESS;
 }
 
@@ -198,7 +230,7 @@ bool message_reader::process(char* data, size_t len)
 		return false;
 
 	// read MSG_ID
-	if (cur_msg_args_ptr == NULL && buffer_can_read(sizeof(MSG_ID)))
+	if (msg_args_stack.size() == 0 && buffer_can_read(sizeof(MSG_ID)))
 	{
 		read_from_buffer(&cur_msg_id, sizeof(MSG_ID));
 		msg_args_stack.push_back(handler_ptr->get_msg_args_by_id(cur_msg_id));

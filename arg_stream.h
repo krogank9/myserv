@@ -109,22 +109,23 @@ public:
 		return dict;
 	}
 
-	void put_8(int8_t n) { put_data((char*)&n, 1); }
-	void put_16(int16_t n) { put_data((char*)&n, 2); }
-	void put_32(int32_t n) { put_data((char*)&n, 4); }
-	void put_64(int64_t n) { put_data((char*)&n, 8); }
+	void put_8(int8_t n) { put_data((char*)&n, sizeof(int8_t)); }
+	void put_16(int16_t n) { put_data((char*)&n, sizeof(int16_t)); }
+	void put_32(int32_t n) { put_data((char*)&n, sizeof(int32_t)); }
+	void put_64(int64_t n) { put_data((char*)&n, sizeof(int64_t)); }
 
-	void put_u8(uint8_t n) { put_data((char*)&n, 1); }
-	void put_u16(uint16_t n) { put_data((char*)&n, 2); }
-	void put_u32(uint32_t n) { put_data((char*)&n, 4); }
-	void put_u64(uint64_t n) { put_data((char*)&n, 8); }
+	void put_u8(uint8_t n) { put_data((char*)&n, sizeof(uint8_t)); }
+	void put_u16(uint16_t n) { put_data((char*)&n, sizeof(uint16_t)); }
+	void put_u32(uint32_t n) { put_data((char*)&n, sizeof(uint32_t)); }
+	void put_u64(uint64_t n) { put_data((char*)&n, sizeof(uint64_t)); }
 
-	void put_float(float n) { put_data((char*)&n, 4); }
-	void put_double(double n) { put_data((char*)&n, 8); }
+	void put_float(float n) { put_data((char*)&n, sizeof(float)); }
+	void put_double(double n) { put_data((char*)&n, sizeof(double)); }
 
 	void put_string(std::string str) { put_data((char*)str.c_str(), str.length()+1/* +1 for \0 */); }
 
-	void put_blob(char* data, uint16_t len) { put_data(&len, sizeof(uint16_t)); put_data(data, len); }
+	void put_blob(std::vector<char> blob) { put_u16(blob.size()); put_data(blob); }
+	void put_blob(char* data, uint16_t len) { put_u16(len); put_data(data, len); }
 
 	void put_property(property p)
 	{
@@ -167,14 +168,14 @@ public:
 	void put_array(std::vector<property> p)
 	{
 		put_u16(p.size());
-		for (auto it=p.begin(); it<p.end(); i++)
+		for (auto it=p.begin(); it!=p.end(); i++)
 			put_property(*it);
 	}
 
 	void put_dict(std::map<property, property> m)
 	{
 		put_u16(m.size());
-		for (auto it=m.begin(); it<m.end(); i++)
+		for (auto it=m.begin(); it!=m.end(); i++)
 		{
 			std::pair<property, property> p = *it;
 			put_property(p.first);

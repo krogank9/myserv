@@ -35,10 +35,7 @@ public:
 	property(std::vector<property> v) : cur_type(ARG_UINT8) { set_array(v); }
 	property(std::map<property, property> v) : cur_type(ARG_UINT8) { set_dict(v); }
 
-	~property()
-	{
-		delete_ptr();
-	}
+	~property() { delete_ptr(); }
 
 	////////////////////////////////////////////////////////////
 

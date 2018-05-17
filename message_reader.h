@@ -41,6 +41,13 @@ private:
 		rpos = old;
 		return ret;
 	}
+	bool skip_read_buffer(size_t len)
+	{
+		if (get_buffer_read_left() < len)
+			return false;
+		rpos += len;
+		return true;
+	}
 	size_t get_buffer_read_left() { return wpos-rpos; }
 	size_t get_buffer_write_left() { return buffer_capacity - get_buffer_read_left(); }
 	bool buffer_can_read(size_t len) { return get_buffer_read_left() >= len; }
@@ -51,9 +58,31 @@ private:
 	enum class READ_RESULT { SUCCESS, ERROR, NEED_READ_MORE };
 	READ_RESULT read_cur_type_to_args_stream();
 
+	std::vector<ARG_TYPE> make_array_args_list(ARG_TYPE type, int len)
+	{
+		std::vector<ARG_TYPE> args_list;
+		args_list.reserve(len);
+		while (args_list.size() < len)
+			args_list.push_back(type);
+		return args_list;
+	}
+
+	std::vector<ARG_TYPE> make_dict_args_list(ARG_TYPE key_type, ARG_TYPE val_type, int len)
+	{
+		len *= 2;
+		std::vector<ARG_TYPE> args_list;
+		args_list.reserve(len);
+		while (args_list.size() < len)
+		{
+			args_list.push_back(key_type);
+			args_list.push_back(val_type);
+		}
+		return args_list;
+	}
+
 	arg_stream cur_arg_stream;
 
-	std::vector< std::vector<MSG_ID> > msg_args_stack;
+	std::vector< std::vector<ARG_TYPE> > msg_args_stack;
 	std::vector<int> msg_args_index_stack;
 
 	MSG_ID cur_msg_id;

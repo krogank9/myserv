@@ -31,7 +31,7 @@ typedef uint8_t ARG_TYPE;
 #define ARG_ARRAY 13 // uint16_t (size) prefixed, list of elements each prefixed by uint8_t type
 #define ARG_DICT 12 // uint16_t (size) prefixed, list of (ARG_PROP, ARG_PROP) pairs
 
-#define ARG_PROP 14 // ARG_TYPE prefixed followed by corresponding ARG_*
+#define ARG_PROP 14 // uint8_t (ARG_TYPE) prefixed followed by corresponding ARG_*
 
 // Client <-> Server messages
 

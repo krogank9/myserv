@@ -6,7 +6,7 @@
 #include "fixed_messages.h"
 
 // generic property class that can hold all types:
-// int8-64, uint8-64, float/double, blob, vector of properties, map<property, property>
+// int8-64, uint8-64, float/double, blob, vector<property>, map<property, property>
 class property
 {
 public:

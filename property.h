@@ -250,10 +250,7 @@ public:
 		return 0;
 	}
 
-	float get_float()
-	{
-		return (float)get_double();
-	}
+	float get_float() { return (float)get_double(); }
 	double get_double()
 	{
 		if (is_int())

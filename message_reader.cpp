@@ -84,83 +84,83 @@ message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE ne
 	if (next_type == ARG_UINT8)
 	{
 		if (!buffer_can_read(sizeof(uint8_t)))
-			return READ_RESULT::NEED_READ_MORE;
+			return NEED_READ_MORE;
 		uint8_t x = 0;
-		read_from_buffer(&x, sizeof(uint8_t));
+		read_from_buffer((char*)&x, sizeof(uint8_t));
 		cur_arg_stream.put_u8(x);
 	}
 	else if (next_type == ARG_UINT16)
 	{
 		if (!buffer_can_read(sizeof(uint16_t)))
-			return READ_RESULT::NEED_READ_MORE;
+			return NEED_READ_MORE;
 		uint16_t x = 0;
-		read_from_buffer(&x, sizeof(uint16_t));
+		read_from_buffer((char*)&x, sizeof(uint16_t));
 		cur_arg_stream.put_u16(x);
 	}
 	else if (next_type == ARG_UINT32)
 	{
 		if (!buffer_can_read(sizeof(uint32_t)))
-			return READ_RESULT::NEED_READ_MORE;
+			return NEED_READ_MORE;
 		uint32_t x = 0;
-		read_from_buffer(&x, sizeof(uint32_t));
+		read_from_buffer((char*)&x, sizeof(uint32_t));
 		cur_arg_stream.put_u32(x);
 	}
 	else if (next_type == ARG_UINT64)
 	{
 		if (!buffer_can_read(sizeof(uint64_t)))
-			return READ_RESULT::NEED_READ_MORE;
+			return NEED_READ_MORE;
 		uint64_t x = 0;
-		read_from_buffer(&x, sizeof(uint64_t));
+		read_from_buffer((char*)&x, sizeof(uint64_t));
 		cur_arg_stream.put_u64(x);
 	}
 	// ARG_INT*
 	else if (next_type == ARG_INT8)
 	{
 		if (!buffer_can_read(sizeof(int8_t)))
-			return READ_RESULT::NEED_READ_MORE;
+			return NEED_READ_MORE;
 		int8_t x = 0;
-		read_from_buffer(&x, sizeof(int8_t));
+		read_from_buffer((char*)&x, sizeof(int8_t));
 		cur_arg_stream.put_u8(x);
 	}
 	else if (next_type == ARG_INT16)
 	{
 		if (!buffer_can_read(sizeof(int16_t)))
-			return READ_RESULT::NEED_READ_MORE;
+			return NEED_READ_MORE;
 		int16_t x = 0;
-		read_from_buffer(&x, sizeof(int16_t));
+		read_from_buffer((char*)&x, sizeof(int16_t));
 		cur_arg_stream.put_u16(x);
 	}
 	else if (next_type == ARG_INT32)
 	{
 		if (!buffer_can_read(sizeof(int32_t)))
-			return READ_RESULT::NEED_READ_MORE;
+			return NEED_READ_MORE;
 		int32_t x = 0;
-		read_from_buffer(&x, sizeof(int32_t));
+		read_from_buffer((char*)&x, sizeof(int32_t));
 		cur_arg_stream.put_u32(x);
 	}
 	else if (next_type == ARG_INT64)
 	{
 		if (!buffer_can_read(sizeof(int64_t)))
-			return READ_RESULT::NEED_READ_MORE;
+			return NEED_READ_MORE;
 		int64_t x = 0;
-		read_from_buffer(&x, sizeof(int64_t));
+		read_from_buffer((char*)&x, sizeof(int64_t));
 		cur_arg_stream.put_u64(x);
 	}
 	// ARG_(FLOAT + DOUBLE)
 	else if (next_type == ARG_FLOAT)
 	{
 		if (!buffer_can_read(sizeof(float)))
-			return READ_RESULT::NEED_READ_MORE;
+			return NEED_READ_MORE;
 		float x = 0;
-		read_from_buffer(&x, sizeof(float));
+		read_from_buffer((char*)&x, sizeof(float));
 		cur_arg_stream.put_float(x);
 	}
 	else if (next_type == ARG_DOUBLE)
 	{
 		if (!buffer_can_read(sizeof(double)))
-			return READ_RESULT::NEED_READ_MORE;
+			return NEED_READ_MORE;
 		double x = 0;
-		read_from_buffer(&x, sizeof(double));
+		read_from_buffer((char*)&x, sizeof(double));
 		cur_arg_stream.put_double(x);
 	}
 	// ARG_STRING
@@ -168,7 +168,7 @@ message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE ne
 	{
 		int null_char_pos = find_in_buffer(0);
 		if (null_char_pos < 0)
-			return READ_RESULT::NEED_READ_MORE;
+			return NEED_READ_MORE;
 		size_t str_len = ((size_t)null_char_pos - rpos);
 
 		char str_bytes[str_len+1]; // +1 for null char terminator
@@ -179,12 +179,12 @@ message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE ne
 	else if (next_type == ARG_BLOB)
 	{
 		if (!buffer_can_read(sizeof(uint16_t)))
-			return READ_RESULT::NEED_READ_MORE;
+			return NEED_READ_MORE;
 		uint16_t len = 0;
-		peek_from_buffer(&len, sizeof(uint16_t));
+		peek_from_buffer((char*)&len, sizeof(uint16_t));
 
 		if (!buffer_can_read(len))
-			return READ_RESULT::NEED_READ_MORE;
+			return NEED_READ_MORE;
 		else
 			skip_read_buffer(sizeof(uint16_t)); // skip len we peeked
 
@@ -197,12 +197,16 @@ message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE ne
 	else if (next_type == ARG_PROP)
 	{
 		if (!buffer_can_read(sizeof(ARG_TYPE)))
-			return READ_RESULT::NEED_READ_MORE;
+			return NEED_READ_MORE;
 		ARG_TYPE prop_type = ARG_UINT8;
-		peek_from_buffer(&prop_type, sizeof(ARG_TYPE));
+		peek_from_buffer((char*)&prop_type, sizeof(ARG_TYPE));
 
-		if (!buffer_can_read(ARG_SIZEOF(type)))
-			return READ_RESULT::NEED_READ_MORE;
+		int arg_size = ARG_SIZEOF(prop_type);
+		if (arg_size < 0)
+			return ERROR;
+
+		if (!buffer_can_read(arg_size))
+			return NEED_READ_MORE;
 		else
 			skip_read_buffer(sizeof(ARG_TYPE)); // skip type we peeked
 
@@ -213,9 +217,9 @@ message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE ne
 	else if (next_type == ARG_ARRAY)
 	{
 		if (!buffer_can_read(sizeof(uint16_t)))
-			return READ_RESULT::NEED_READ_MORE;
+			return NEED_READ_MORE;
 		uint16_t len = 0;
-		read_from_buffer(&len, sizeof(uint16_t));
+		read_from_buffer((char*)&len, sizeof(uint16_t));
 
 		msg_args_stack.push_back(make_array_args_list(ARG_PROP,len));
 		msg_args_index_stack.push_back(0);
@@ -223,19 +227,19 @@ message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE ne
 	else if (next_type == ARG_DICT)
 	{
 		if (!buffer_can_read(sizeof(uint16_t)))
-			return READ_RESULT::NEED_READ_MORE;
+			return NEED_READ_MORE;
 		uint16_t len = 0;
-		read_from_buffer(&len, sizeof(uint16_t));
+		read_from_buffer((char*)&len, sizeof(uint16_t));
 
 		msg_args_stack.push_back(make_dict_args_list(ARG_PROP, ARG_PROP, len));
 		msg_args_index_stack.push_back(0);
 	}
 	else
 	{
-		return READ_RESULT::ERROR;
+		return ERROR;
 	}
 
-	return READ_RESULT::SUCCESS;
+	return SUCCESS;
 }
 
 /*------------------------------------*/
@@ -250,32 +254,33 @@ bool message_reader::process(char* data, size_t len)
 	// read MSG_ID
 	if (msg_args_stack.size() == 0 && buffer_can_read(sizeof(MSG_ID)))
 	{
-		read_from_buffer(&cur_msg_id, sizeof(MSG_ID));
-		msg_args_stack.push_back(handler_ptr->get_msg_args_by_id(cur_msg_id));
+		read_from_buffer((char*)&cur_msg_id, sizeof(MSG_ID));
+		std::vector<ARG_TYPE>* msg_args = handler_ptr->get_msg_args_by_id(cur_msg_id);
+		// invalid msg id read from network
+		if (msg_args == NULL)
+			return false;
+
+		msg_args_stack.push_back(*msg_args);
 		msg_args_index_stack.push_back(0);
 		cur_arg_stream.clear();
-
-		// invalid message ID read from network
-		if (cur_msg_args_ptr == NULL)
-			return false;
 	}
 
 	// read arguments for cur_msg_id
-	if (cur_msg_args_ptr != NULL)
+	if (msg_args_stack.size() > 0)
 	{
-		while (msg_args_index_stack.back() < cur_msg_args_ptr->size() && read_cur_type_to_args_stream())
+		while (msg_args_index_stack.back() < msg_args_stack.back().size())
 		{
 			ARG_TYPE next_type = msg_args_stack.back()[msg_args_index_stack.back()];
 			READ_RESULT result = read_type_to_args_stream(next_type);
-			if (result == READ_RESULT::SUCCESS)
+			if (result == SUCCESS)
 			{
 				msg_args_index_stack.back()++;
 				if (msg_args_index_stack.back() >= msg_args_stack.back().size())
 					msg_args_stack.pop_back();
 			}
-			else if (result == READ_RESULT::NEED_READ_MORE)
+			else if (result == NEED_READ_MORE)
 				break;
-			else// if (result == READ_RESULT::ERROR)
+			else// if (result == ERROR)
 				return false;
 		}
 	}

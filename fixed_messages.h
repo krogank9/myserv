@@ -60,33 +60,17 @@ typedef uint8_t ARG_TYPE;
 #define ARG_DICT_STRING_DOUBLE 37
 #define ARG_DICT_STRING_STRING 38
 
-size_t ARG_SIZEOF(ARG_TYPE arg)
-{
-	// UINT
-	if (arg == ARG_UINT8)
-		return sizeof(uint8_t);
-	if (arg == ARG_UINT16)
-		return sizeof(uint16_t);
-	if (arg == ARG_UINT32)
-		return sizeof(uint32_t);
-	if (arg == ARG_UINT64)
-		return sizeof(uint64_t);
-	// INT
-	if (arg == ARG_INT8)
-		return sizeof(int8_t);
-	if (arg == ARG_INT16)
-		return sizeof(int16_t);
-	if (arg == ARG_INT32)
-		return sizeof(int32_t);
-	if (arg == ARG_INT64)
-		return sizeof(int64_t);
-	// FLOAT/DOUBLE
-	if (arg == ARG_FLOAT)
-		return sizeof(float);
-	if (arg == ARG_DOUBLE)
-		return sizeof(double);
-	return 0;
-}
+#define ARG_SIZEOF(arg)\
+	arg==ARG_UINT8?1:\
+	arg==ARG_UINT16?2:\
+	arg==ARG_UINT32?4:\
+	arg==ARG_UINT64?8:\
+	arg==ARG_INT8?1:\
+	arg==ARG_INT16?2:\
+	arg==ARG_INT32?4:\
+	arg==ARG_INT64?8:\
+	arg==ARG_FLOAT?4:\
+	arg==ARG_DOUBLE?8:-1 // lol
 
 // Client <-> Server messages
 

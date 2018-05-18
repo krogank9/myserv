@@ -40,6 +40,9 @@ bool test_property()
 	ASSERT(hi_str != bye_str);
 	ASSERT(hi_str == hi_str_2);
 
+	DO(hi_str += " world");
+	ASSERT(hi_str == "hi world");
+
 	PRINT("\ntesting numbers:\n");
 
 	DO(property num = 5);
@@ -82,16 +85,12 @@ bool test_property()
 
 	PRINT("\ntesting dict:\n");
 
-	DO(property dict;)
+	DO(property dict);
 	DO(dict.set_dict());
 
-	PRINT(dict.get_dict().size());
-
-	DO(dict[0] = 0;)
-	DO(dict["a"] = 3;)
-	DO(dict["b"] = 3;)
-
-	PRINT(dict.get_dict().size());
+	DO(dict[0] = 0);
+	DO(dict["a"] = 3);
+	DO(dict["b"] = 3);
 
 	ASSERT(dict.get_dict().size() == 3);
 	ASSERT(dict[0] == 0);

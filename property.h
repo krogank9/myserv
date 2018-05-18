@@ -91,7 +91,9 @@ public:
 	{
 		property tmp(*this);
 
-		if (is_double() || rhs.is_double())
+		if (is_string() || rhs.is_string())
+			tmp.set_string(get_string() + rhs.get_string());
+		else if (is_double() || rhs.is_double())
 			tmp.set_double(get_double() + rhs.get_double());
 		else if (is_float() || rhs.is_float())
 			tmp.set_float(get_float() + rhs.get_float());

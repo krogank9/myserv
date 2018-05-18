@@ -80,6 +80,7 @@ int message_reader::find_in_buffer(char c)
 
 message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE next_type)
 {
+	std::cout << "next_type: " << (int)next_type << std::endl;
 	// ARG_UINT*
 	if (next_type == ARG_UINT8)
 	{
@@ -178,20 +179,20 @@ message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE ne
 	// ARG_BLOB
 	else if (next_type == ARG_BLOB)
 	{
-		if (!buffer_can_read(sizeof(uint16_t)))
+		if (!buffer_can_read(sizeof(BLOB_LEN)))
 			return NEED_READ_MORE;
-		uint16_t len = 0;
-		peek_from_buffer((char*)&len, sizeof(uint16_t));
+		BLOB_LEN len = 0;
+		peek_from_buffer((char*)&len, sizeof(BLOB_LEN));
+		std::cout << "blob length: " << len << std::endl;
 
 		if (!buffer_can_read(len))
 			return NEED_READ_MORE;
 		else
-			skip_read_buffer(sizeof(uint16_t)); // skip len we peeked
+			skip_read_buffer(sizeof(BLOB_LEN)); // skip len we peeked
 
-		size_t total_len = sizeof(uint16_t) + len; // include len bytes
-		char data[total_len];
-		read_from_buffer(data, total_len);
-		cur_arg_stream.put_blob(data, total_len);
+		char data[len];
+		read_from_buffer(data, len);
+		cur_arg_stream.put_blob(data, len);
 	}
 	// TYPED PROPERTY
 	else if (next_type == ARG_PROP)
@@ -205,10 +206,17 @@ message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE ne
 		read_from_buffer((char*)&prop_type, sizeof(ARG_TYPE));
 
 		cur_arg_stream.put_u8(prop_type);
+		if (prop_type == ARG_PROP)
+		{
+			std::cout << "message_reader::read_type_to_args_stream():"
+						 " ERROR, property type cannot be ARG_PROP." << std::endl;
+			return ERROR; // prevent infinite loop here
+		}
 		READ_RESULT ret = read_type_to_args_stream(prop_type);
 
 		if (ret == NEED_READ_MORE)
 		{
+			std::cout << "NEED_READ_MORE from ARG_PROP" << std::endl;
 			cur_arg_stream.unput(sizeof(prop_type));
 			rpos = old_rpos;
 			wpos = old_wpos;
@@ -219,27 +227,37 @@ message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE ne
 	// CONTAINERS
 	else if (next_type == ARG_ARRAY)
 	{
-		if (!buffer_can_read(sizeof(uint16_t)))
+		if (!buffer_can_read(sizeof(ARRAY_LEN)))
 			return NEED_READ_MORE;
-		uint16_t len = 0;
-		read_from_buffer((char*)&len, sizeof(uint16_t));
+		ARRAY_LEN len = 0;
+		read_from_buffer((char*)&len, sizeof(ARRAY_LEN));
+		cur_arg_stream.put_u16(len);
 
-		msg_args_stack.push_back(make_array_args_list(ARG_PROP,len));
+		std::cout << "ARG_ARRAY pushing args stack" << std::endl;
+		msg_args_stack.push_back(make_array_args_list(ARG_PROP, len));
 		msg_args_index_stack.push_back(0);
+		std::cout << "CONTINUE from ARG_ARRAY" << std::endl;
+		return CONTINUE;
 	}
 	else if (next_type == ARG_DICT)
 	{
-		if (!buffer_can_read(sizeof(uint16_t)))
+		if (!buffer_can_read(sizeof(DICT_LEN)))
 			return NEED_READ_MORE;
-		uint16_t len = 0;
-		read_from_buffer((char*)&len, sizeof(uint16_t));
+		DICT_LEN len = 0;
+		read_from_buffer((char*)&len, sizeof(DICT_LEN));
+		cur_arg_stream.put_u16(len);
 
+		std::cout << "ARG_ARRAY pushing dict stack" << std::endl;
 		msg_args_stack.push_back(make_dict_args_list(ARG_PROP, ARG_PROP, len));
 		msg_args_index_stack.push_back(0);
+
+		std::cout << "CONTINUE from ARG_DICT" << std::endl;
+		return CONTINUE;
 	}
 	else
 	{
-		std::cout << "message_reader::read_type_to_args_stream(): next_type invalid: " << (int)next_type << std::endl;
+		std::cout << "message_reader::read_type_to_args_stream(): ERROR"
+					 " next_type invalid: " << (int)next_type << std::endl;
 		return ERROR;
 	}
 
@@ -272,40 +290,58 @@ bool message_reader::process(char* data, size_t len)
 				return false;
 			}
 
+			std::cout << "new MSG_ID, pushing args stack" << std::endl;
 			msg_args_stack.push_back(*msg_args);
 			msg_args_index_stack.push_back(0);
 		}
 
-		bool message_queued = msg_args_stack.size() > 0;
+		bool message_finished_reading = false;
 		// read arguments for cur_msg_id
-		if (message_queued)
+		while (msg_args_stack.size() > 0)
 		{
-			while (true)
+			if (msg_args_index_stack.back() >= msg_args_stack.back().size())
 			{
-				if (msg_args_index_stack.back() >= msg_args_stack.back().size())
+				msg_args_stack.pop_back();
+				msg_args_index_stack.pop_back();
+				std::cout << "popping args stack" << std::endl;
+				std::cout << "cur index: " << msg_args_index_stack.back() << std::endl;
+				if (msg_args_stack.size() == 0)
 				{
-					msg_args_stack.pop_back();
-					msg_args_index_stack.pop_back();
-					if (msg_args_stack.size() == 0)
-						break;
-				}
-
-				ARG_TYPE next_type = msg_args_stack.back()[msg_args_index_stack.back()];
-				READ_RESULT result = read_type_to_args_stream(next_type);
-				if (result == SUCCESS)
-					msg_args_index_stack.back()++;
-				else if (result == NEED_READ_MORE)
+					message_finished_reading = true;
 					break;
-				else// if (result == ERROR)
-				{
-					std::cout << "message_reader::process(): error reading message, id was: " << cur_msg_id << std::endl;
-					return false;
 				}
+				else
+				{
+					msg_args_index_stack.back()++;
+					continue;
+				}
+			}
+
+			ARG_TYPE next_type = msg_args_stack.back()[msg_args_index_stack.back()];
+			READ_RESULT result = read_type_to_args_stream(next_type);
+			if (result == SUCCESS)
+			{
+				std::cout << "SUCCESS" << std::endl;
+				msg_args_index_stack.back()++;
+			}
+			else if(result == CONTINUE)
+			{
+				std::cout << "CONTINUE" << std::endl;
+				continue;
+			}
+			else if (result == NEED_READ_MORE)
+			{
+				std::cout << "NEED_READ_MORE" << std::endl;
+				return true;
+			}
+			else// if (result == ERROR)
+			{
+				std::cout << "message_reader::process(): error reading message, id was: " << cur_msg_id << std::endl;
+				return false;
 			}
 		}
 
-		bool message_finished_reading = msg_args_stack.size() == 0;
-		if (message_queued && message_finished_reading)
+		if (message_finished_reading)
 		{
 			handler_ptr->call_network_interface(parent_tcp_connection_ptr, cur_msg_id, cur_arg_stream);
 			cur_arg_stream.clear();

@@ -42,7 +42,7 @@ private:
 	}
 	bool skip_read_buffer(size_t len)
 	{
-		if (get_buffer_read_left() < len)
+		if (len > get_buffer_read_left())
 			return false;
 		rpos += len;
 		return true;
@@ -54,7 +54,7 @@ private:
 	size_t rpos;
 	size_t wpos;
 
-	enum READ_RESULT { SUCCESS, ERROR, NEED_READ_MORE };
+	enum READ_RESULT { SUCCESS, ERROR, CONTINUE, NEED_READ_MORE };
 	READ_RESULT read_type_to_args_stream(ARG_TYPE next_type);
 
 	std::vector<ARG_TYPE> make_array_args_list(ARG_TYPE type, int len)

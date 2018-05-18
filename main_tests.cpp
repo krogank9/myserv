@@ -253,7 +253,7 @@ bool test_args_stream()
 property mr_prop1 = 123;
 property mr_prop2 = "abc";
 std::vector<property> mr_p_vec;
-property prop_mr_p_vec;
+property prop_mr_container;
 std::map<property, property> mr_p_map;
 std::vector<char> mr_blob_vec;
 bool test_message_reader()
@@ -263,16 +263,21 @@ bool test_message_reader()
 	mr_p_vec.push_back(10.5f);
 	mr_p_vec.push_back(-1000);
 	mr_p_vec.push_back(mr_p_vec);
-	prop_mr_p_vec = mr_p_vec;
 
 	mr_p_map["abc"] = 5;
 	mr_p_map["asassd"] = 5.555f;
 	mr_p_map[5] = 3;
 	mr_p_map["nested"] = mr_p_map;
 
-	mr_blob_vec.push_back(0);
-	mr_blob_vec.push_back(1);
-	mr_blob_vec.push_back(3);
+	char b[5] = {1,2,3,4,6};
+	std::vector<char> b_vec(b, b+5);
+	mr_blob_vec = b_vec;
+
+	prop_mr_container.set_dict();
+	prop_mr_container["dict"] = mr_p_map;
+	prop_mr_container["vec"] = mr_p_vec;
+	prop_mr_container["blob"] = mr_blob_vec;
+
 	class dummy_handler : public message_handler
 	{
 	public:
@@ -331,7 +336,7 @@ bool test_message_reader()
 				ASSERT(args.get_array() == mr_p_vec);
 				ASSERT(args.get_dict() == mr_p_map);
 				ASSERT(args.get_blob() == mr_blob_vec);
-				ASSERT(args.get_property() == prop_mr_p_vec);
+				ASSERT(args.get_property() == prop_mr_container);
 				ASSERT(args.length() == 0);
 			}
 			return true;
@@ -383,7 +388,7 @@ bool test_message_reader()
 	args.put_array(mr_p_vec);
 	args.put_dict(mr_p_map);
 	args.put_blob(mr_blob_vec);
-	args.put_property(prop_mr_p_vec);
+	args.put_property(prop_mr_container);
 
 	ASSERT( reader.process(args.get_buffer(), args.length()) == true );
 

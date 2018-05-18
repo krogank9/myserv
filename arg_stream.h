@@ -132,7 +132,7 @@ public:
 
 	void put_string(std::string str) { put_data((char*)str.c_str(), str.length()+1/* +1 for \0 */); }
 
-	void put_blob(std::vector<char> blob) { put_u16(blob.size()); put_data(blob); }
+	void put_blob(std::vector<char>& blob) { put_u16(blob.size()); put_data(blob); }
 	void put_blob(char* data, uint16_t len) { put_u16(len); put_data(data, len); }
 
 	void put_property(property p, ARG_TYPE prop_type=ARG_PROP)
@@ -195,7 +195,7 @@ public:
 		}
 	}
 
-	void put_data(std::vector<char> data) { buffer.insert(buffer.end(), data.begin(), data.end()); }
+	void put_data(std::vector<char>& data) { buffer.insert(buffer.end(), data.begin(), data.end()); }
 	void put_data(char* src, size_t len) { buffer.insert(buffer.end(), src, src+len); }
 
 	void unput(size_t len)

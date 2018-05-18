@@ -11,6 +11,9 @@
 
 typedef uint16_t MSG_ID;
 typedef uint8_t ARG_TYPE;
+typedef uint16_t DICT_LEN;
+typedef uint16_t ARRAY_LEN;
+typedef uint16_t BLOB_LEN;
 
 #define ARG_UINT8 0
 #define ARG_UINT16 1
@@ -26,12 +29,12 @@ typedef uint8_t ARG_TYPE;
 #define ARG_DOUBLE 9 // 64 bit IEEE floating point
 
 #define ARG_STRING 10 // null terminated ascii string
-#define ARG_BLOB 11 // uint16_t (size) prefixed, arbitrary data blob
+#define ARG_BLOB 11 // BLOB_LEN prefixed, arbitrary data blob
 
-#define ARG_ARRAY 13 // uint16_t (size) prefixed, list of elements each prefixed by uint8_t type
-#define ARG_DICT 12 // uint16_t (size) prefixed, list of (ARG_PROP, ARG_PROP) pairs
+#define ARG_ARRAY 12 // ARRAY_LEN prefixed, list of elements each prefixed by uint8_t type
+#define ARG_DICT 13 // DICT_LEN prefixed, list of (ARG_PROP, ARG_PROP) pairs
 
-#define ARG_PROP 14 // uint8_t (ARG_TYPE) prefixed followed by corresponding ARG_*
+#define ARG_PROP 14 // ARG_TYPE prefixed, followed by corresponding ARG_*
 
 // fixed type containers to save bandwidth
 
@@ -59,18 +62,6 @@ typedef uint8_t ARG_TYPE;
 #define ARG_DICT_STRING_FLOAT 36
 #define ARG_DICT_STRING_DOUBLE 37
 #define ARG_DICT_STRING_STRING 38
-
-#define ARG_SIZEOF(arg)\
-	arg==ARG_UINT8?1:\
-	arg==ARG_UINT16?2:\
-	arg==ARG_UINT32?4:\
-	arg==ARG_UINT64?8:\
-	arg==ARG_INT8?1:\
-	arg==ARG_INT16?2:\
-	arg==ARG_INT32?4:\
-	arg==ARG_INT64?8:\
-	arg==ARG_FLOAT?4:\
-	arg==ARG_DOUBLE?8:-1 // lol
 
 // Client <-> Server messages
 

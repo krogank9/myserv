@@ -2,6 +2,7 @@
 #define PROPERTY_H
 
 #include <string>
+#include <sstream>
 #include "stdint.h"
 #include "fixed_messages.h"
 
@@ -39,70 +40,70 @@ public:
 
 	////////////////////////////////////////////////////////////
 
-	bool operator==(const property& lhs, const property& rhs)
+	bool operator==(const property& rhs) const
 	{
-		if (lhs.is_string() && rhs.is_string())
-			return lhs.get_string() == rhs.get_string();
-		else if(lhs.has_point() || rhs.has_point())
-			return lhs.get_double() == rhs.get_double();
-		else if(lhs.is_uint() && rhs.is_uint())
-			return lhs.get_u64() == rhs.get_u64();
-		else if(lhs.is_number() && rhs.is_number())
-			return lhs.get_64() == rhs.get_64();
-		else if(lhs.is_blob() && rhs.is_blob())
-			return lhs.get_blob() == rhs.get_blob();
-		else if(lhs.is_array() && rhs.is_array())
-			return lhs.get_array() == rhs.get_array();
-		else if(lhs.is_dict() && rhs.is_dict())
-			return lhs.get_dict() == rhs.get_dict();
+		if (is_string() || rhs.is_string())
+			return get_string() == rhs.get_string();
+		else if(has_point() || rhs.has_point())
+			return get_double() == rhs.get_double();
+		else if(is_uint() && rhs.is_uint())
+			return get_u64() == rhs.get_u64();
+		else if(is_number() && rhs.is_number())
+			return get_64() == rhs.get_64();
+		else if(is_blob() && rhs.is_blob())
+			return get_blob() == rhs.get_blob();
+		else if(is_array() && rhs.is_array())
+			return get_array() == rhs.get_array();
+		else if(is_dict() && rhs.is_dict())
+			return get_dict() == rhs.get_dict();
 
 		return false;
 	}
 
-	bool operator<(const property& lhs, const property& rhs)
+	bool operator<(const property& rhs) const
 	{
-		if (lhs.is_string() || rhs.is_string())
-			return lhs.get_string() < rhs.get_string();
-		else if (lhs.has_point() || rhs.has_point())
-			return lhs.get_double() < rhs.get_double();
-		else if (lhs.is_uint() && rhs.is_uint())
-			return lhs.get_u64() < rhs.get_u64();
+		if (is_string() || rhs.is_string())
+			return get_string() < rhs.get_string();
+		else if (has_point() || rhs.has_point())
+			return get_double() < rhs.get_double();
+		else if (is_uint() && rhs.is_uint())
+			return get_u64() < rhs.get_u64();
 		else
-			return lhs.get_64() < rhs.get_64();
+			return get_64() < rhs.get_64();
 	}
 
-	bool operator>(const property& lhs, const property& rhs) { return rhs < lhs; }
-	bool operator<=(const property& lhs, const property& rhs) { return lhs < rhs || lhs == rhs; }
-	bool operator>=(const property& lhs, const property& rhs) { return lhs > rhs || lhs == rhs; }
+	bool operator>(const property& rhs) const { return rhs < *this; }
+	bool operator<=(const property& rhs) const { return *this < rhs || *this == rhs; }
+	bool operator>=(const property& rhs) const { return *this > rhs || *this == rhs; }
 
-	property& operator+(const property& lhs, const property& rhs)
+	property operator+(const property& rhs) const
 	{
-		property tmp(lhs);
+		property tmp(*this);
 
-		if (lhs.is_double() || rhs.is_double())
-			tmp.set_double(lhs.get_double() + rhs.get_double());
-		else if (lhs.is_float() || rhs.is_float())
-			tmp.set_float(lhs.get_float() + rhs.get_float());
+		if (is_double() || rhs.is_double())
+			tmp.set_double(get_double() + rhs.get_double());
+		else if (is_float() || rhs.is_float())
+			tmp.set_float(get_float() + rhs.get_float());
 		else
-			tmp.set_64(lhs.get_64() + rhs.get_64());
+			tmp.set_64(get_64() + rhs.get_64());
 
 		return tmp;
 	}
 
-	property& operator-(const property& lhs, const property& rhs)
+	property operator-(const property& rhs) const
 	{
-		if (!lhs.is_number() || !rhs.is_number())
-			return lhs;
+		if (!is_number() || !rhs.is_number())
+			return property(*this);
 
-		property tmp_lhs(lhs);
+		property tmp_lhs(*this);
 		property tmp_rhs(rhs);
 
-		if (lhs.is_double() || rhs.is_double())
+		if (is_double() || rhs.is_double())
 		{
 			tmp_lhs = tmp_lhs.get_double();
 			tmp_rhs = -tmp_rhs.get_double();
 		}
-		else if (lhs.is_float() || rhs.is_float())
+		else if (is_float() || rhs.is_float())
 		{
 			tmp_lhs = tmp_lhs.get_float();
 			tmp_rhs = -tmp_rhs.get_float();
@@ -117,10 +118,10 @@ public:
 	}
 
 	property& operator=(const property& rhs) { set(rhs); return *this; }
-	property& operator+=(const property& rhs) { return (*this = *this + rhs); }
-	property& operator-=(const property& rhs) { return (*this = *this - rhs); }
-	property& operator++() { return *this + property(1); }
-	property& operator--() { return *this - property(1); }
+	property& operator+=(const property& rhs) { *this = *this + rhs; return *this; }
+	property& operator-=(const property& rhs) { *this = *this - rhs; return *this; }
+	property& operator++() { *this = *this + property(1); return *this; }
+	property& operator--() { *this = *this - property(1); return *this; }
 
 	////////////////////////////////////////////////////////////
 
@@ -162,7 +163,7 @@ public:
 
 	////////////////////////////////////////////////////////////
 
-	void set(property &copy)
+	void set(const property& copy)
 	{
 		if (copy.is_int())
 		{
@@ -212,7 +213,7 @@ public:
 
 	void set_string(std::string str) { set_type(ARG_STRING); *get_string_ptr() = str; }
 	void set_blob(std::vector<char> blob) { set_type(ARG_BLOB); *get_blob_ptr() = blob; }
-	void set_blob(char* data, size_t len) { set_blob(std::vector<char>(data, data+len); }
+	void set_blob(char* data, size_t len) { set_blob(std::vector<char>(data, data+len)); }
 
 	void set_array(std::vector<property> vec) { set_type(ARG_ARRAY); *get_vector_ptr() = vec; }
 
@@ -220,10 +221,10 @@ public:
 
 	////////////////////////////////////////////////////////////
 
-	int8_t get_u8() { return (uint8_t)get_u64(); }
-	int16_t get_u16() { return (uint16_t)get_u64(); }
-	int32_t get_u32() { return (uint32_t)get_u64(); }
-	uint64_t get_u64()
+	int8_t get_u8() const { return (uint8_t)get_u64(); }
+	int16_t get_u16() const { return (uint16_t)get_u64(); }
+	int32_t get_u32() const { return (uint32_t)get_u64(); }
+	uint64_t get_u64() const
 	{
 		if (is_int())
 			return (uint64_t)value.i64;
@@ -235,10 +236,10 @@ public:
 		return 0;
 	}
 
-	int8_t get_8() { return (int8_t)get_64(); }
-	int16_t get_16() { return (int16_t)get_64(); }
-	int32_t get_32() { return (int32_t)get_64(); }
-	int64_t get_64()
+	int8_t get_8() const { return (int8_t)get_64(); }
+	int16_t get_16() const { return (int16_t)get_64(); }
+	int32_t get_32() const { return (int32_t)get_64(); }
+	int64_t get_64() const
 	{
 		if (is_int())
 			return value.i64;
@@ -250,8 +251,8 @@ public:
 		return 0;
 	}
 
-	float get_float() { return (float)get_double(); }
-	double get_double()
+	float get_float() const { return (float)get_double(); }
+	double get_double() const
 	{
 		if (is_int())
 			return (double)value.i64;
@@ -263,18 +264,18 @@ public:
 		return 0.0;
 	}
 
-	std::string get_string()
+	std::string get_string() const
 	{
 		if (!is_string())
 		{
+			std::stringstream s;
 			if (has_point())
-				return std::string(get_double());
+				s << get_double();
 			else if (is_uint())
-				return std::string(get_u64());
+				s << get_u64();
 			else if (is_int())
-				return std::string(get_64());
-			else
-				return "";
+				s << get_64();
+			return s.str();
 		}
 		else
 		{
@@ -282,7 +283,7 @@ public:
 		}
 	}
 
-	std::vector<char> get_blob()
+	std::vector<char> get_blob() const
 	{
 		if (!is_blob())
 			return std::vector<char>();
@@ -290,7 +291,7 @@ public:
 			return *get_blob_ptr();
 	}
 
-	std::vector<property> get_array()
+	std::vector<property> get_array() const
 	{
 		if (!is_array())
 			return std::vector<property>();
@@ -298,39 +299,39 @@ public:
 			return *get_vector_ptr();
 	}
 
-	std::map<property, property> get_dict()
+	std::map<property, property> get_dict() const
 	{
 		if (!is_array())
-			return std::vector<property, property>();
+			return std::map<property, property>();
 		else
 			return *get_map_ptr();
 	}
 
 	////////////////////////////////////////////////////////////
 
-	bool is_int()
+	bool is_int() const
 	{
 		return cur_type == ARG_INT8
 				|| cur_type == ARG_INT16
 				|| cur_type == ARG_INT32
 				|| cur_type == ARG_INT64;
 	}
-	bool is_uint()
+	bool is_uint() const
 	{
 		return cur_type == ARG_UINT8
 				|| cur_type == ARG_UINT16
 				|| cur_type == ARG_UINT32
 				|| cur_type == ARG_UINT64;
 	}
-	bool is_float() { return cur_type == ARG_FLOAT; }
-	bool is_double() { return cur_type == ARG_DOUBLE; }
-	bool has_point() { return cur_type == ARG_FLOAT || cur_type == ARG_DOUBLE; }
-	bool is_number() { return is_int() || is_uint() || is_float() || is_double(); }
-	bool is_string() { return cur_type == ARG_STRING; }
-	bool is_blob() { return cur_type == ARG_BLOB; }
-	bool is_array() { return cur_type == ARG_ARRAY; }
-	bool is_dict() { return cur_type == ARG_DICT; }
-	ARG_TYPE get_type() { return cur_type; }
+	bool is_float() const { return cur_type == ARG_FLOAT; }
+	bool is_double() const { return cur_type == ARG_DOUBLE; }
+	bool has_point() const { return cur_type == ARG_FLOAT || cur_type == ARG_DOUBLE; }
+	bool is_number() const { return is_int() || is_uint() || is_float() || is_double(); }
+	bool is_string() const { return cur_type == ARG_STRING; }
+	bool is_blob() const { return cur_type == ARG_BLOB; }
+	bool is_array() const { return cur_type == ARG_ARRAY; }
+	bool is_dict() const { return cur_type == ARG_DICT; }
+	ARG_TYPE get_type() const { return cur_type; }
 
 private:
 	union
@@ -341,10 +342,10 @@ private:
 		void* ptr;
 	} value;
 
-	std::string* get_string_ptr() { return (std::string*)value.ptr; }
-	std::vector<char>* get_blob_ptr() { return (std::vector<char>*)value.ptr; }
-	std::vector<property>* get_vector_ptr() { return (std::vector<property>*)value.ptr; }
-	std::map<property, property>* get_map_ptr() { return (std::map<property, property>*)value.ptr; }
+	std::string* get_string_ptr() const { return (std::string*)value.ptr; }
+	std::vector<char>* get_blob_ptr() const { return (std::vector<char>*)value.ptr; }
+	std::vector<property>* get_vector_ptr() const { return (std::vector<property>*)value.ptr; }
+	std::map<property, property>* get_map_ptr() const { return (std::map<property, property>*)value.ptr; }
 
 	ARG_TYPE cur_type;
 };

@@ -3,6 +3,7 @@
 
 #include <string>
 #include <sstream>
+#include <iostream>
 #include "stdint.h"
 #include "fixed_messages.h"
 
@@ -29,7 +30,8 @@ public:
 	property(double v) : cur_type(ARG_UINT8) { set_double(v); }
 
 	property(std::string v) : cur_type(ARG_UINT8) { set_string(v); }
-	property(char* v) : cur_type(ARG_UINT8) { set_string(v); }
+	property(const char* v) : cur_type(ARG_UINT8) { set_string(v); }
+	property(char v) : cur_type(ARG_UINT8) { std::string s = ""; s += v; set_string(s); }
 
 	property(std::vector<char> v) : cur_type(ARG_UINT8) { set_blob(v); }
 	property(char* data, size_t len) : cur_type(ARG_UINT8) { set_blob(data, len); }
@@ -45,7 +47,7 @@ public:
 	{
 		if (is_string() && rhs.is_string())
 			return get_string() == rhs.get_string();
-		else if(has_point() || rhs.has_point())
+		else if((is_number() && rhs.is_number()) && (has_point() || rhs.has_point()))
 			return get_double() == rhs.get_double();
 		else if(is_uint() && rhs.is_uint())
 			return get_u64() == rhs.get_u64();
@@ -65,7 +67,13 @@ public:
 
 	bool operator<(const property& rhs) const
 	{
-		if (is_string() && rhs.is_string())
+		if (is_blob() && rhs.is_blob())
+			return get_blob() < rhs.get_blob();
+		else if (is_array() && rhs.is_array())
+			return get_array() < rhs.get_array();
+		else if (is_dict() && rhs.is_dict())
+			return get_dict() < rhs.get_dict();
+		else if (is_string() || rhs.is_string())
 			return get_string() < rhs.get_string();
 		else if (has_point() || rhs.has_point())
 			return get_double() < rhs.get_double();
@@ -125,6 +133,16 @@ public:
 	property& operator-=(const property& rhs) { *this = *this - rhs; return *this; }
 	property& operator++() { *this = *this + property(1); return *this; }
 	property& operator--() { *this = *this - property(1); return *this; }
+
+	property& operator[](property elem)
+	{
+		if (is_dict())
+			return (*get_map_ptr())[elem];
+		else if (is_array())
+			return (*get_vector_ptr())[elem.get_u64()];
+		else
+			return *this;
+	}
 
 	////////////////////////////////////////////////////////////
 
@@ -215,12 +233,12 @@ public:
 	void set_64(int64_t i) { set_type(ARG_INT64); value.i64 = i; }
 
 	void set_string(std::string str) { set_type(ARG_STRING); *get_string_ptr() = str; }
-	void set_blob(std::vector<char> blob) { set_type(ARG_BLOB); *get_blob_ptr() = blob; }
+	void set_blob(std::vector<char> blob=std::vector<char>()) { set_type(ARG_BLOB); *get_blob_ptr() = blob; }
 	void set_blob(char* data, size_t len) { set_blob(std::vector<char>(data, data+len)); }
 
-	void set_array(std::vector<property> vec) { set_type(ARG_ARRAY); *get_vector_ptr() = vec; }
+	void set_array(std::vector<property> vec=std::vector<property>()) { set_type(ARG_ARRAY); *get_vector_ptr() = vec; }
 
-	void set_dict(std::map<property, property> map) { set_type(ARG_DICT); *get_map_ptr() = map; }
+	void set_dict(std::map<property, property> map=std::map<property, property>()) { set_type(ARG_DICT); *get_map_ptr() = map; }
 
 	////////////////////////////////////////////////////////////
 
@@ -286,26 +304,26 @@ public:
 		}
 	}
 
-	std::vector<char> get_blob() const
+	std::vector<char>& get_blob() const
 	{
 		if (!is_blob())
-			return std::vector<char>();
+			throw std::runtime_error("property::get_blob(): property is not currently a blob!");
 		else
 			return *get_blob_ptr();
 	}
 
-	std::vector<property> get_array() const
+	std::vector<property>& get_array() const
 	{
 		if (!is_array())
-			return std::vector<property>();
+			throw std::runtime_error("property::get_array(): property is not currently an array!");
 		else
 			return *get_vector_ptr();
 	}
 
-	std::map<property, property> get_dict() const
+	std::map<property, property>& get_dict() const
 	{
-		if (!is_array())
-			return std::map<property, property>();
+		if (!is_dict())
+			throw std::runtime_error("property::get_dict(): property is not currently a dict!");
 		else
 			return *get_map_ptr();
 	}

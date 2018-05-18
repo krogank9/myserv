@@ -7,8 +7,6 @@
 #include "property.h"
 
 // byte stream for serialization/deserialization over network
-// before it is readable, message_reader always checks validity,
-// so all get_* calls do not check for safety
 class arg_stream
 {
 public:

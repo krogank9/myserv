@@ -3,6 +3,9 @@
 #include <map>
 #include "property.h"
 #include "arg_stream.h"
+#include "fixed_messages.h"
+#include "message_reader.h"
+#include "tcp_connection.h"
 #include "stdint.h"
 
 using namespace std;
@@ -20,7 +23,7 @@ using namespace std;
 	else\
 	{\
 		cout << "ASSERT("STRING(cond)") failed" << endl;\
-		return false;\
+		exit(1);\
 	}\
 }
 #define PRINT(str) cout << str << endl
@@ -55,25 +58,25 @@ bool test_property()
 	DO(num += 5);
 	ASSERT(num == 10);
 
-	DO(property decimal = 1.5);
+	DO(property decimal = 1.5f);
 	ASSERT(decimal != num);
-	DO(decimal += 8.5);
+	DO(decimal += 8.5f);
 	ASSERT(decimal == num);
 
 	DO(num += decimal);
 	ASSERT(num.has_point());
-	ASSERT(num == 20.0);
+	ASSERT(num == 20.0f);
 
 	PRINT("\ntesting array:\n");
 
 	DO(std::vector<property> vec);
 	DO(vec.push_back(property(1)));
 	DO(vec.push_back(property(2)));
-	DO(vec.push_back(property(3.0)));
+	DO(vec.push_back(property(3.0f)));
 	DO(vec.push_back(property('a')));
 
 	DO(property arr = vec);
-	ASSERT(arr[0] == 1.0);
+	ASSERT(arr[0] == 1.0f);
 	ASSERT(arr[1] == 2);
 	ASSERT(arr[2] == 3);
 	ASSERT(arr[3] == 'a');
@@ -138,10 +141,10 @@ bool test_args_stream()
 	ASSERT(args.get_u32() == 999);
 	ASSERT(args.get_u64() == 5);
 
-	DO(args.put_float(10.5));
-	DO(args.put_double(11.5));
-	ASSERT(args.get_float() == 10.5);
-	ASSERT(args.get_double() == 11.5);
+	DO(args.put_float(10.5f));
+	DO(args.put_double(11.5f));
+	ASSERT(args.get_float() == 10.5f);
+	ASSERT(args.get_double() == 11.5f);
 
 	PRINT("\ntesting blob:\n");
 
@@ -189,9 +192,9 @@ bool test_args_stream()
 	DO(std::vector<property> prop_vec);
 	DO(prop_vec.push_back(0));
 	DO(prop_vec.push_back("a"));
-	DO(prop_vec.push_back(3.5));
+	DO(prop_vec.push_back(3.5f));
 
-	DO(prop_vec.push_back(3.5));
+	DO(prop_vec.push_back(3.5f));
 
 	DO(args.put_array(prop_vec));
 	DO(std::vector<property> read_prop_vec = args.get_array());
@@ -208,7 +211,7 @@ bool test_args_stream()
 	DO(std::map<property, property> dummy_dict);
 	DO(prop_dict["hi"] = 5);
 	DO(prop_dict[0] = 5);
-	DO(prop_dict[0.5] = 67);
+	DO(prop_dict[0.5f] = 67);
 
 	DO(args.put_dict(prop_dict));
 	DO(std::map<property, property> read_prop_dict = args.get_dict());
@@ -242,6 +245,151 @@ bool test_args_stream()
 	return true;
 }
 
+#define EMPTY_MSG_ID 0
+#define STRING_MSG_ID 1
+#define NUM_MSG_ID 2
+#define PROP_MSG_ID 3
+#define CONTAINER_MSG_ID 4
+property mr_prop1 = 123;
+property mr_prop2 = "abc";
+std::vector<property> mr_p_vec;
+property prop_mr_p_vec;
+std::map<property, property> mr_p_map;
+std::vector<char> mr_blob_vec;
+bool test_message_reader()
+{
+	mr_p_vec.push_back(123);
+	mr_p_vec.push_back("abc");
+	mr_p_vec.push_back(10.5f);
+	mr_p_vec.push_back(-1000);
+	mr_p_vec.push_back(mr_p_vec);
+	prop_mr_p_vec = mr_p_vec;
+
+	mr_p_map["abc"] = 5;
+	mr_p_map["asassd"] = 5.555f;
+	mr_p_map[5] = 3;
+	mr_p_map["nested"] = mr_p_map;
+
+	mr_blob_vec.push_back(0);
+	mr_blob_vec.push_back(1);
+	mr_blob_vec.push_back(3);
+	class dummy_handler : public message_handler
+	{
+	public:
+		dummy_handler()
+		{
+			string_msg.push_back(ARG_STRING);
+			string_msg.push_back(ARG_STRING);
+
+			num_msg.push_back(ARG_FLOAT);
+			num_msg.push_back(ARG_DOUBLE);
+			num_msg.push_back(ARG_UINT8);
+			num_msg.push_back(ARG_INT64);
+
+			prop_msg.push_back(ARG_PROP);
+			prop_msg.push_back(ARG_PROP);
+
+			container_msg.push_back(ARG_ARRAY);
+			container_msg.push_back(ARG_DICT);
+			container_msg.push_back(ARG_BLOB);
+			container_msg.push_back(ARG_PROP);
+		}
+
+		bool call_network_interface(tcp_connection* originator, int msgID, arg_stream& args)
+		{
+			if (msgID == EMPTY_MSG_ID)
+			{
+				PRINT("received empty msg");
+				ASSERT(args.length() == 0);
+			}
+			else if (msgID == STRING_MSG_ID)
+			{
+				PRINT("received string msg");
+				ASSERT(args.get_string() == "str1");
+				ASSERT(args.get_string() == "test");
+				ASSERT(args.length() == 0);
+			}
+			else if (msgID == NUM_MSG_ID)
+			{
+				PRINT("received num msg");
+				ASSERT(args.get_float() == 0.1f);
+				ASSERT(args.get_double() == 0.01f);
+				ASSERT(args.get_u8() == 10);
+				ASSERT(args.get_64() == 1000);
+				ASSERT(args.length() == 0);
+			}
+			else if (msgID == PROP_MSG_ID)
+			{
+				PRINT("received prop msg");
+				ASSERT(args.get_property() == mr_prop1);
+				ASSERT(args.get_property() == mr_prop2);
+				ASSERT(args.length() == 0);
+			}
+			else if (msgID == CONTAINER_MSG_ID)
+			{
+				PRINT("received container msg");
+				ASSERT(args.get_array() == mr_p_vec);
+				ASSERT(args.get_dict() == mr_p_map);
+				ASSERT(args.get_blob() == mr_blob_vec);
+				ASSERT(args.get_property() == prop_mr_p_vec);
+				ASSERT(args.length() == 0);
+			}
+			return true;
+		}
+
+		std::vector<ARG_TYPE>* get_msg_args_by_id(MSG_ID msgID)
+		{
+			if (msgID == EMPTY_MSG_ID)
+				return &empty_msg;
+			if (msgID == STRING_MSG_ID)
+				return &string_msg;
+			if (msgID == NUM_MSG_ID)
+				return &num_msg;
+			if (msgID == PROP_MSG_ID)
+				return &prop_msg;
+			if (msgID == CONTAINER_MSG_ID)
+				return &container_msg;
+			return NULL;
+		}
+
+		vector<ARG_TYPE> empty_msg;
+		vector<ARG_TYPE> string_msg;
+		vector<ARG_TYPE> num_msg;
+		vector<ARG_TYPE> prop_msg;
+		vector<ARG_TYPE> container_msg;
+	} dummy;
+	message_reader reader(&dummy, NULL);
+
+	arg_stream args;
+
+	// empty msg
+	args.put_msg_id(EMPTY_MSG_ID);
+	// string msg
+	args.put_msg_id(STRING_MSG_ID);
+	args.put_string("str1");
+	args.put_string("test");
+	// num msg
+	args.put_msg_id(NUM_MSG_ID);
+	args.put_float(0.1f);
+	args.put_double(0.01f);
+	args.put_u8(10);
+	args.put_64(1000);
+	// prop msg
+	args.put_msg_id(PROP_MSG_ID);
+	args.put_property(mr_prop1);
+	args.put_property(mr_prop2);
+	// container msg
+	args.put_msg_id(CONTAINER_MSG_ID);
+	args.put_array(mr_p_vec);
+	args.put_dict(mr_p_map);
+	args.put_blob(mr_blob_vec);
+	args.put_property(prop_mr_p_vec);
+
+	ASSERT( reader.process(args.get_buffer(), args.length()) == true );
+
+	return true;
+}
+
 int main()
 {
 	PRINT("doing property tests\n"HR);
@@ -249,21 +397,18 @@ int main()
 	{
 		PRINT(HR"\nall property tests passed.");
 	}
-	else
-	{
-		PRINT(HR"\nproperty tests failed!");
-		return 1;
-	}
+
 
 	PRINT("\ndoing arg_stream tests\n"HR);
 	if (test_args_stream())
 	{
 		PRINT(HR"\nall arg_stream tests passed.");
 	}
-	else
+
+	PRINT("\ndoing message_reader tests\n"HR);
+	if (test_message_reader())
 	{
-		PRINT(HR"\narg_stream tests failed!");
-		return 1;
+		PRINT(HR"\nall message_reader tests passed.");
 	}
 
 	PRINT("\n"HR"\nall tests passed.");

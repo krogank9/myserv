@@ -28,6 +28,8 @@ public:
 	float get_float() { return *((float*)(buffer.data()+add_rpos<float>())); }
 	double get_double() { return *((double*)(buffer.data()+add_rpos<double>())); }
 
+	double get_msg_id() { return *((MSG_ID*)(buffer.data()+add_rpos<MSG_ID>())); }
+
 	std::string get_string()
 	{
 		std::string str = "";
@@ -126,6 +128,8 @@ public:
 	void put_float(float n) { put_data((char*)&n, sizeof(float)); }
 	void put_double(double n) { put_data((char*)&n, sizeof(double)); }
 
+	void put_msg_id(MSG_ID n) { put_data((char*)&n, sizeof(MSG_ID)); }
+
 	void put_string(std::string str) { put_data((char*)str.c_str(), str.length()+1/* +1 for \0 */); }
 
 	void put_blob(std::vector<char> blob) { put_u16(blob.size()); put_data(blob); }
@@ -193,6 +197,14 @@ public:
 
 	void put_data(std::vector<char> data) { buffer.insert(buffer.end(), data.begin(), data.end()); }
 	void put_data(char* src, size_t len) { buffer.insert(buffer.end(), src, src+len); }
+
+	void unput(size_t len)
+	{
+		if(buffer.size() <= len)
+			buffer.clear();
+		else
+			buffer.resize(buffer.size()-len);
+	}
 
 private:
 	template<typename T> size_t add_rpos() { size_t old = rpos; rpos += sizeof(T); return old; }

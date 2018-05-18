@@ -11,8 +11,8 @@ tcp_server::tcp_server(boost::asio::io_service& io_service, int port, game_serve
 
 tcp_server::~tcp_server()
 {
-	std::vector<tcp_connection*> it = client_list.begin();
-	for (;it != client_list.end(); i++)
+	std::set<tcp_connection*>::iterator it = client_list.begin();
+	for (;it != client_list.end(); it++)
 		delete *it;
 }
 

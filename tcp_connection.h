@@ -15,6 +15,7 @@ class message_handler;
 using boost::asio::ip::tcp;
 
 class tcp_connection_manager {
+public:
 	virtual void connection_closed(tcp_connection*)=0;
 };
 

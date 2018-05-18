@@ -199,19 +199,22 @@ message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE ne
 		if (!buffer_can_read(sizeof(ARG_TYPE)))
 			return NEED_READ_MORE;
 		ARG_TYPE prop_type = ARG_UINT8;
-		peek_from_buffer((char*)&prop_type, sizeof(ARG_TYPE));
 
-		int arg_size = ARG_SIZEOF(prop_type);
-		if (arg_size < 0)
-			return ERROR;
-
-		if (!buffer_can_read(arg_size))
-			return NEED_READ_MORE;
-		else
-			skip_read_buffer(sizeof(ARG_TYPE)); // skip type we peeked
+		int old_rpos = rpos;
+		int old_wpos = wpos;
+		read_from_buffer((char*)&prop_type, sizeof(ARG_TYPE));
 
 		cur_arg_stream.put_u8(prop_type);
-		return read_type_to_args_stream(prop_type);
+		READ_RESULT ret = read_type_to_args_stream(prop_type);
+
+		if (ret == NEED_READ_MORE)
+		{
+			cur_arg_stream.unput(sizeof(prop_type));
+			rpos = old_rpos;
+			wpos = old_wpos;
+		}
+
+		return ret;
 	}
 	// CONTAINERS
 	else if (next_type == ARG_ARRAY)
@@ -236,6 +239,7 @@ message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE ne
 	}
 	else
 	{
+		std::cout << "message_reader::read_type_to_args_stream(): next_type invalid: " << (int)next_type << std::endl;
 		return ERROR;
 	}
 
@@ -251,37 +255,60 @@ bool message_reader::process(char* data, size_t len)
 	if (!write_to_buffer(data, len))
 		return false;
 
-	// read MSG_ID
-	if (msg_args_stack.size() == 0 && buffer_can_read(sizeof(MSG_ID)))
+	// read all available messages, return true inside loop if NEED_READ_MORE
+	while (true)
 	{
-		read_from_buffer((char*)&cur_msg_id, sizeof(MSG_ID));
-		std::vector<ARG_TYPE>* msg_args = handler_ptr->get_msg_args_by_id(cur_msg_id);
-		// invalid msg id read from network
-		if (msg_args == NULL)
-			return false;
-
-		msg_args_stack.push_back(*msg_args);
-		msg_args_index_stack.push_back(0);
-		cur_arg_stream.clear();
-	}
-
-	// read arguments for cur_msg_id
-	if (msg_args_stack.size() > 0)
-	{
-		while (msg_args_index_stack.back() < msg_args_stack.back().size())
+		// read MSG_ID
+		if (msg_args_stack.size() == 0)
 		{
-			ARG_TYPE next_type = msg_args_stack.back()[msg_args_index_stack.back()];
-			READ_RESULT result = read_type_to_args_stream(next_type);
-			if (result == SUCCESS)
+			if (!buffer_can_read(sizeof(MSG_ID)))
+				return true;
+
+			read_from_buffer((char*)&cur_msg_id, sizeof(MSG_ID));
+			std::vector<ARG_TYPE>* msg_args = handler_ptr->get_msg_args_by_id(cur_msg_id);
+			if (msg_args == NULL)
 			{
-				msg_args_index_stack.back()++;
-				if (msg_args_index_stack.back() >= msg_args_stack.back().size())
-					msg_args_stack.pop_back();
-			}
-			else if (result == NEED_READ_MORE)
-				break;
-			else// if (result == ERROR)
+				std::cout << "message_reader::process(): received invalid message id: " << cur_msg_id << std::endl;
 				return false;
+			}
+
+			msg_args_stack.push_back(*msg_args);
+			msg_args_index_stack.push_back(0);
+		}
+
+		bool message_queued = msg_args_stack.size() > 0;
+		// read arguments for cur_msg_id
+		if (message_queued)
+		{
+			while (true)
+			{
+				if (msg_args_index_stack.back() >= msg_args_stack.back().size())
+				{
+					msg_args_stack.pop_back();
+					msg_args_index_stack.pop_back();
+					if (msg_args_stack.size() == 0)
+						break;
+				}
+
+				ARG_TYPE next_type = msg_args_stack.back()[msg_args_index_stack.back()];
+				READ_RESULT result = read_type_to_args_stream(next_type);
+				if (result == SUCCESS)
+					msg_args_index_stack.back()++;
+				else if (result == NEED_READ_MORE)
+					break;
+				else// if (result == ERROR)
+				{
+					std::cout << "message_reader::process(): error reading message, id was: " << cur_msg_id << std::endl;
+					return false;
+				}
+			}
+		}
+
+		bool message_finished_reading = msg_args_stack.size() == 0;
+		if (message_queued && message_finished_reading)
+		{
+			handler_ptr->call_network_interface(parent_tcp_connection_ptr, cur_msg_id, cur_arg_stream);
+			cur_arg_stream.clear();
 		}
 	}
 

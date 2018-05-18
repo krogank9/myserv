@@ -390,7 +390,17 @@ bool test_message_reader()
 	args.put_blob(mr_blob_vec);
 	args.put_property(prop_mr_container);
 
-	ASSERT( reader.process(args.get_buffer(), args.length()) == true );
+	ASSERT( args.length() < MAX_SAFE_ARG_SIZE_BYTES );
+	while ( args.length() > 0 )
+	{
+		bool ret = reader.process(args.get_buffer(), 1);
+		args.add_rpos(1);
+		if (!ret)
+		{
+			PRINT("reader.process error");
+			return false;
+		}
+	}
 
 	return true;
 }

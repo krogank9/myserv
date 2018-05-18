@@ -6,6 +6,9 @@
 #include <vector>
 #include "property.h"
 
+// byte stream for serialization/deserialization over network
+// before it is readable, message_reader always checks validity,
+// so all get_* calls do not check for safety
 class arg_stream
 {
 public:
@@ -14,6 +17,15 @@ public:
 	int length() { return buffer.size()-rpos; }
 	char *get_buffer() { return buffer.data()+rpos; }
 	void clear() { buffer.clear(); rpos = 0; }
+	size_t add_rpos(size_t size)
+	{
+		size_t old = rpos;
+		if (size > length())
+			throw std::runtime_error("arg_stream::add_rpos(): rpos exceeds length");
+		rpos += size;
+		return old;
+	}
+	template<typename T> size_t add_rpos() { return add_rpos(sizeof(T)); }
 
 	int8_t get_8() { return *((int8_t*)(buffer.data()+add_rpos<int8_t>())); }
 	int16_t get_16() { return *((int16_t*)(buffer.data()+add_rpos<int16_t>())); }
@@ -40,7 +52,7 @@ public:
 			str += *data;
 			data++;
 		}
-		rpos += str.length()+1; //+1 for null char
+		add_rpos(str.length() + 1); //+1 for null char
 		return str;
 	}
 
@@ -49,7 +61,7 @@ public:
 		uint16_t len = 0;
 		len = get_u16();
 		std::vector<char> blob(get_buffer(), get_buffer()+len);
-		rpos += len;
+		add_rpos(len);
 		return blob;
 	}
 
@@ -207,7 +219,6 @@ public:
 	}
 
 private:
-	template<typename T> size_t add_rpos() { size_t old = rpos; rpos += sizeof(T); return old; }
 	std::vector<char> buffer;
 	int rpos;
 };

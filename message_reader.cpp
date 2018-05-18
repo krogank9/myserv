@@ -183,7 +183,7 @@ message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE ne
 		BLOB_LEN len = 0;
 		peek_from_buffer((char*)&len, sizeof(BLOB_LEN));
 
-		if (!buffer_can_read(len))
+		if (!buffer_can_read(len+sizeof(BLOB_LEN)))
 			return NEED_READ_MORE;
 		else
 			skip_read_buffer(sizeof(BLOB_LEN)); // skip len we peeked

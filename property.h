@@ -29,6 +29,7 @@ public:
 	property(double v) : cur_type(ARG_UINT8) { set_double(v); }
 
 	property(std::string v) : cur_type(ARG_UINT8) { set_string(v); }
+	property(char* v) : cur_type(ARG_UINT8) { set_string(v); }
 
 	property(std::vector<char> v) : cur_type(ARG_UINT8) { set_blob(v); }
 	property(char* data, size_t len) : cur_type(ARG_UINT8) { set_blob(data, len); }
@@ -42,7 +43,7 @@ public:
 
 	bool operator==(const property& rhs) const
 	{
-		if (is_string() || rhs.is_string())
+		if (is_string() && rhs.is_string())
 			return get_string() == rhs.get_string();
 		else if(has_point() || rhs.has_point())
 			return get_double() == rhs.get_double();
@@ -60,9 +61,11 @@ public:
 		return false;
 	}
 
+	bool operator!=(const property& rhs) const { return !(*this == rhs); }
+
 	bool operator<(const property& rhs) const
 	{
-		if (is_string() || rhs.is_string())
+		if (is_string() && rhs.is_string())
 			return get_string() < rhs.get_string();
 		else if (has_point() || rhs.has_point())
 			return get_double() < rhs.get_double();

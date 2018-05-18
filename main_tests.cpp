@@ -3,10 +3,39 @@
 
 using namespace std;
 
+#define STRING(s) #s
+#define ASSERT(cond)\
+{\
+	if((cond))\
+	{\
+		cout << "("STRING(cond)") passed" <<  endl;\
+	}\
+	else if(!(cond))\
+	{\
+		cout << "("STRING(cond)") failed" << endl;\
+		return false;\
+	}\
+}
+
+bool test_property()
+{
+	property str1 = "hi";
+	property str2 = "bye";
+	property str3 = "hi";
+	ASSERT(str1 != str2);
+	ASSERT(str1 == str3);
+	return true;
+}
+
 int main()
 {
-	property p = 5;
-	p+=6;
-
-	cout << p.get_string() << endl;
+	if (test_property())
+	{
+		cout << "all property tests passed." << endl;
+	}
+	else
+	{
+		cout << "property tests failed!" << endl;
+		return 1;
+	}
 }

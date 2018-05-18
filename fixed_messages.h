@@ -33,6 +33,33 @@ typedef uint8_t ARG_TYPE;
 
 #define ARG_PROP 14 // uint8_t (ARG_TYPE) prefixed followed by corresponding ARG_*
 
+// fixed type containers to save bandwidth
+
+#define ARG_ARRAY_UINT8 15
+#define ARG_ARRAY_UINT16 16
+#define ARG_ARRAY_UINT32 17
+#define ARG_ARRAY_UINT64 18
+#define ARG_ARRAY_INT8 19
+#define ARG_ARRAY_INT16 20
+#define ARG_ARRAY_INT32 21
+#define ARG_ARRAY_INT64 22
+#define ARG_ARRAY_FLOAT 23
+#define ARG_ARRAY_DOUBLE 24
+#define ARG_ARRAY_STRING 25
+
+#define ARG_DICT_STRING 27
+#define ARG_DICT_STRING_UINT8 28
+#define ARG_DICT_STRING_UINT16 29
+#define ARG_DICT_STRING_UINT32 30
+#define ARG_DICT_STRING_UINT64 31
+#define ARG_DICT_STRING_INT8 32
+#define ARG_DICT_STRING_INT16 33
+#define ARG_DICT_STRING_INT32 34
+#define ARG_DICT_STRING_INT64 35
+#define ARG_DICT_STRING_FLOAT 36
+#define ARG_DICT_STRING_DOUBLE 37
+#define ARG_DICT_STRING_STRING 38
+
 size_t ARG_SIZEOF(ARG_TYPE arg)
 {
 	// UINT

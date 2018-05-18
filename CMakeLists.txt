@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
+set(CMAKE_BUILD_TYPE Debug)
+
 project(myserv)
 
 set(Boost_USE_STATIC_LIBS OFF)
@@ -11,7 +13,7 @@ find_package(Threads)
 if(Boost_FOUND)
 	include_directories(${Boost_INCLUDE_DIRS})
 
-	add_executable(tests "main_tests.cpp" "property.h")
+	add_executable(tests "main_tests.cpp" "property.h" "arg_stream.h" "fixed_messages.h")
 
 	#add_executable(client "main_client.cpp" "tcp_connection.cpp")
 	#target_link_libraries(client ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})

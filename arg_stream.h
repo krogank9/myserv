@@ -9,35 +9,36 @@
 class arg_stream
 {
 public:
-	arg_stream() { buffer.reserve(128); }
+	arg_stream() : rpos(0) { buffer.reserve(128); }
 
 	int length() { return buffer.size()-rpos; }
 	char *get_buffer() { return buffer.data()+rpos; }
-	void clear() { buffer.clear(); }
+	void clear() { buffer.clear(); rpos = 0; }
 
-	int8_t get_8() { return *((int8_t*)(buffer.data()+add_rpos(1))); }
-	int16_t get_16() { return *((int16_t*)(buffer.data()+add_rpos(2))); }
-	int32_t get_32() { return *((int32_t*)(buffer.data()+add_rpos(4))); }
-	int64_t get_64() { return *((int64_t*)(buffer.data()+add_rpos(8))); }
+	int8_t get_8() { return *((int8_t*)(buffer.data()+add_rpos<int8_t>())); }
+	int16_t get_16() { return *((int16_t*)(buffer.data()+add_rpos<int16_t>())); }
+	int32_t get_32() { return *((int32_t*)(buffer.data()+add_rpos<int32_t>())); }
+	int64_t get_64() { return *((int64_t*)(buffer.data()+add_rpos<int64_t>())); }
 
-	uint8_t get_u8() { return *((uint8_t*)(buffer.data()+add_rpos(1))); }
-	uint16_t get_u16() { return *((uint16_t*)(buffer.data()+add_rpos(2))); }
-	uint32_t get_u32() { return *((uint32_t*)(buffer.data()+add_rpos(4))); }
-	uint64_t get_u64() { return *((uint64_t*)(buffer.data()+add_rpos(8))); }
+	uint8_t get_u8() { return *((uint8_t*)(buffer.data()+add_rpos<uint8_t>())); }
+	uint16_t get_u16() { return *((uint16_t*)(buffer.data()+add_rpos<uint16_t>())); }
+	uint32_t get_u32() { return *((uint32_t*)(buffer.data()+add_rpos<uint32_t>())); }
+	uint64_t get_u64() { return *((uint64_t*)(buffer.data()+add_rpos<uint64_t>())); }
 
-	float get_float() { return *((float*)(buffer.data()+add_rpos(4))); }
-	double get_double() { return *((double*)(buffer.data()+add_rpos(8))); }
+	float get_float() { return *((float*)(buffer.data()+add_rpos<float>())); }
+	double get_double() { return *((double*)(buffer.data()+add_rpos<double>())); }
 
 	std::string get_string()
 	{
 		std::string str = "";
-		char *data = buffer.data();
+		char *data = get_buffer();
 		char *end = data+length();
 		while(data != end && *data != 0)
 		{
 			str += *data;
 			data++;
 		}
+		rpos += str.length()+1; //+1 for null char
 		return str;
 	}
 
@@ -45,12 +46,15 @@ public:
 	{
 		uint16_t len = 0;
 		len = get_u16();
-		return std::vector<char>(get_buffer(), get_buffer()+len);
+		std::vector<char> blob(get_buffer(), get_buffer()+len);
+		rpos += len;
+		return blob;
 	}
 
-	property get_property()
+	property get_property(ARG_TYPE prop_type=ARG_PROP)
 	{
-		ARG_TYPE prop_type = get_u8();
+		if (prop_type == ARG_PROP)
+			prop_type = get_u8();
 
 		// UINT
 		if (prop_type == ARG_UINT8)
@@ -86,24 +90,24 @@ public:
 			return property(get_dict());
 	}
 
-	std::vector<property> get_array()
+	std::vector<property> get_array(ARG_TYPE arr_type=ARG_PROP)
 	{
 		uint16_t len = get_u16();
 		std::vector<property> vec;
 		vec.reserve(len);
 		while (len-- > 0)
-			vec.push_back(get_property());
+			vec.push_back(get_property(arr_type));
 		return vec;
 	}
 
-	std::map<property, property> get_dict()
+	std::map<property, property> get_dict(ARG_TYPE key_type=ARG_PROP, ARG_TYPE val_type=ARG_PROP)
 	{
 		uint16_t len = get_u16();
 		std::map<property, property> dict;
 		while (len-- > 0)
 		{
-			property key = get_property();
-			property val = get_property();
+			property key = get_property(key_type);
+			property val = get_property(val_type);
 			dict[key] = val;
 		}
 		return dict;
@@ -127,59 +131,63 @@ public:
 	void put_blob(std::vector<char> blob) { put_u16(blob.size()); put_data(blob); }
 	void put_blob(char* data, uint16_t len) { put_u16(len); put_data(data, len); }
 
-	void put_property(property p)
+	void put_property(property p, ARG_TYPE prop_type=ARG_PROP)
 	{
-		put_u8(p.get_type());
+		if (prop_type == ARG_PROP)
+		{
+			prop_type = p.get_type();
+			put_u8(prop_type);
+		}
 
 		// UINT
-		if (p.get_type() == ARG_UINT8)
+		if (prop_type == ARG_UINT8)
 			put_u8(p.get_u8());
-		else if (p.get_type() == ARG_UINT16)
+		else if (prop_type == ARG_UINT16)
 			put_u16(p.get_u16());
-		else if (p.get_type() == ARG_UINT32)
+		else if (prop_type == ARG_UINT32)
 			put_u32(p.get_u32());
-		else if (p.get_type() == ARG_UINT64)
+		else if (prop_type == ARG_UINT64)
 			put_u64(p.get_u64());
 		// INT
-		else if (p.get_type() == ARG_INT8)
+		else if (prop_type == ARG_INT8)
 			put_8(p.get_8());
-		else if (p.get_type() == ARG_INT16)
+		else if (prop_type == ARG_INT16)
 			put_16(p.get_16());
-		else if (p.get_type() == ARG_INT32)
+		else if (prop_type == ARG_INT32)
 			put_32(p.get_32());
-		else if (p.get_type() == ARG_INT64)
+		else if (prop_type == ARG_INT64)
 			put_64(p.get_64());
 		// FLOAT/DOUBLE
-		else if (p.get_type() == ARG_FLOAT)
+		else if (prop_type == ARG_FLOAT)
 			put_float(p.get_float());
-		else if (p.get_type() == ARG_DOUBLE)
+		else if (prop_type == ARG_DOUBLE)
 			put_double(p.get_double());
 		// NON-NUMERIC
-		else if (p.get_type() == ARG_STRING)
+		else if (prop_type == ARG_STRING)
 			put_string(p.get_string());
-		else if (p.get_type() == ARG_BLOB)
+		else if (prop_type == ARG_BLOB)
 			put_blob(p.get_blob());
-		else if (p.get_type() == ARG_ARRAY)
+		else if (prop_type == ARG_ARRAY)
 			put_array(p.get_array());
-		else if (p.get_type() == ARG_DICT)
+		else if (prop_type == ARG_DICT)
 			put_dict(p.get_dict());
 	}
 
-	void put_array(std::vector<property> p)
+	void put_array(std::vector<property> p, ARG_TYPE arr_type=ARG_PROP)
 	{
 		put_u16(p.size());
-		for (auto it=p.begin(); it!=p.end(); i++)
-			put_property(*it);
+		for (std::vector<property>::iterator it=p.begin(); it!=p.end(); it++)
+			put_property(*it, arr_type);
 	}
 
-	void put_dict(std::map<property, property> m)
+	void put_dict(std::map<property, property> m, ARG_TYPE key_type=ARG_PROP, ARG_TYPE val_type=ARG_PROP)
 	{
 		put_u16(m.size());
-		for (auto it=m.begin(); it!=m.end(); i++)
+		for (std::map<property, property>::iterator it=m.begin(); it!=m.end(); it++)
 		{
 			std::pair<property, property> p = *it;
-			put_property(p.first);
-			put_property(p.second);
+			put_property(p.first, key_type);
+			put_property(p.second, val_type);
 		}
 	}
 
@@ -187,7 +195,7 @@ public:
 	void put_data(char* src, size_t len) { buffer.insert(buffer.end(), src, src+len); }
 
 private:
-	int add_rpos(int x) { int old = rpos; rpos += x; return old; }
+	template<typename T> size_t add_rpos() { size_t old = rpos; rpos += sizeof(T); return old; }
 	std::vector<char> buffer;
 	int rpos;
 };

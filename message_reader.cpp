@@ -80,7 +80,6 @@ int message_reader::find_in_buffer(char c)
 
 message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE next_type)
 {
-	std::cout << "next_type: " << (int)next_type << std::endl;
 	// ARG_UINT*
 	if (next_type == ARG_UINT8)
 	{
@@ -183,7 +182,6 @@ message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE ne
 			return NEED_READ_MORE;
 		BLOB_LEN len = 0;
 		peek_from_buffer((char*)&len, sizeof(BLOB_LEN));
-		std::cout << "blob length: " << len << std::endl;
 
 		if (!buffer_can_read(len))
 			return NEED_READ_MORE;
@@ -216,7 +214,6 @@ message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE ne
 
 		if (ret == NEED_READ_MORE)
 		{
-			std::cout << "NEED_READ_MORE from ARG_PROP" << std::endl;
 			cur_arg_stream.unput(sizeof(prop_type));
 			rpos = old_rpos;
 			wpos = old_wpos;
@@ -233,10 +230,8 @@ message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE ne
 		read_from_buffer((char*)&len, sizeof(ARRAY_LEN));
 		cur_arg_stream.put_u16(len);
 
-		std::cout << "ARG_ARRAY pushing args stack" << std::endl;
 		msg_args_stack.push_back(make_array_args_list(ARG_PROP, len));
 		msg_args_index_stack.push_back(0);
-		std::cout << "CONTINUE from ARG_ARRAY" << std::endl;
 		return CONTINUE;
 	}
 	else if (next_type == ARG_DICT)
@@ -247,11 +242,9 @@ message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE ne
 		read_from_buffer((char*)&len, sizeof(DICT_LEN));
 		cur_arg_stream.put_u16(len);
 
-		std::cout << "ARG_ARRAY pushing dict stack" << std::endl;
 		msg_args_stack.push_back(make_dict_args_list(ARG_PROP, ARG_PROP, len));
 		msg_args_index_stack.push_back(0);
 
-		std::cout << "CONTINUE from ARG_DICT" << std::endl;
 		return CONTINUE;
 	}
 	else
@@ -290,7 +283,6 @@ bool message_reader::process(char* data, size_t len)
 				return false;
 			}
 
-			std::cout << "new MSG_ID, pushing args stack" << std::endl;
 			msg_args_stack.push_back(*msg_args);
 			msg_args_index_stack.push_back(0);
 		}
@@ -303,8 +295,6 @@ bool message_reader::process(char* data, size_t len)
 			{
 				msg_args_stack.pop_back();
 				msg_args_index_stack.pop_back();
-				std::cout << "popping args stack" << std::endl;
-				std::cout << "cur index: " << msg_args_index_stack.back() << std::endl;
 				if (msg_args_stack.size() == 0)
 				{
 					message_finished_reading = true;
@@ -320,20 +310,11 @@ bool message_reader::process(char* data, size_t len)
 			ARG_TYPE next_type = msg_args_stack.back()[msg_args_index_stack.back()];
 			READ_RESULT result = read_type_to_args_stream(next_type);
 			if (result == SUCCESS)
-			{
-				std::cout << "SUCCESS" << std::endl;
 				msg_args_index_stack.back()++;
-			}
 			else if(result == CONTINUE)
-			{
-				std::cout << "CONTINUE" << std::endl;
 				continue;
-			}
 			else if (result == NEED_READ_MORE)
-			{
-				std::cout << "NEED_READ_MORE" << std::endl;
 				return true;
-			}
 			else// if (result == ERROR)
 			{
 				std::cout << "message_reader::process(): error reading message, id was: " << cur_msg_id << std::endl;

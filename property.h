@@ -314,26 +314,26 @@ public:
 
 	std::vector<char>& get_blob() const
 	{
-		if (!is_blob())
-			throw std::runtime_error("property::get_blob(): property is not currently a blob!");
-		else
+		if (is_blob())
 			return *get_blob_ptr();
+		else
+			throw std::runtime_error("property::get_blob(): property is not currently a blob!");
 	}
 
 	std::vector<property>& get_array() const
 	{
-		if (!is_array())
-			throw std::runtime_error("property::get_array(): property is not currently an array!");
-		else
+		if (is_array())
 			return *get_vector_ptr();
+		else
+			throw std::runtime_error("property::get_array(): property is not currently an array!");
 	}
 
 	std::map<property, property>& get_dict() const
 	{
-		if (!is_dict())
-			throw std::runtime_error("property::get_dict(): property is not currently a dict!");
-		else
+		if (is_dict())
 			return *get_map_ptr();
+		else
+			throw std::runtime_error("property::get_dict(): property is not currently a dict!");
 	}
 
 	////////////////////////////////////////////////////////////

@@ -15,7 +15,13 @@ public:
 
 	virtual bool call_network_interface(tcp_connection* source_tcp_connection, int msgID, arg_stream& args);
 
-	std::vector<ARG_TYPE> get_msg_args_by_id(MSG_ID msgID) { return msg_args_map[msgID]; }
+	std::vector<ARG_TYPE>* get_msg_args_by_id(MSG_ID msgID)
+	{
+		if (msg_args_map.find(msgID) == msg_args_map.end())
+			return NULL;
+		else
+			return &(msg_args_map[msgID]);
+	}
 
 private:
 	// arg descriptions used by all message readers to validate data and get each message length

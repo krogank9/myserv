@@ -80,11 +80,11 @@ typedef uint16_t BLOB_LEN;
 // set map id key to a vector from _ARGS from above
 #define MAP_MSG_ARGS(map, id, args)\
 {\
-	int args_arr[] = args;\
+	ARG_TYPE args_arr[] = args;\
 	if (sizeof(args_arr) > 0)\
-		map[id] = std::vector<int>( args_arr, args_arr + sizeof(args_arr)/sizeof(args_arr[0]) );\
+		map[id] = std::vector<ARG_TYPE>( args_arr, args_arr + sizeof(args_arr)/sizeof(args_arr[0]) );\
 	else\
-		map[id] = std::vector<int>();\
+		map[id] = std::vector<ARG_TYPE>();\
 }
 
 #endif // FIXEDMESSAGES_H

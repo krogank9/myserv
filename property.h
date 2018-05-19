@@ -74,7 +74,7 @@ public:
 			return get_array() < rhs.get_array();
 		else if (is_dict() && rhs.is_dict())
 			return get_dict() < rhs.get_dict();
-		else if (is_string() || rhs.is_string())
+		else if (is_string() && rhs.is_string())
 			return get_string() < rhs.get_string();
 		// numbers
 		else if ((is_number() && rhs.is_number()) && (has_point() || rhs.has_point()))
@@ -83,10 +83,9 @@ public:
 			return get_u64() < rhs.get_u64();
 		else if (is_number() && rhs.is_number())
 			return get_64() < rhs.get_64();
-		else if (is_number() && !rhs.is_number())
-			return true;
-
-		return false;
+		// for std::map sorting
+		else
+			return get_type() < rhs.get_type();
 	}
 
 	bool operator>(const property& rhs) const { return rhs < *this; }

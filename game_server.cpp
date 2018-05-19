@@ -29,6 +29,9 @@ bool game_server::call_network_interface(tcp_connection* originator, int msgID, 
 
 void game_server::recv_client_hello(tcp_connection* originator, std::string protocol_name, std::string protocol_version)
 {
+	std::cout << "received CMSG_HELLO: protocol_name(" << protocol_name << "), protocol_version(" << protocol_version << ")" << std::endl;
+	//arg_stream response;
+	//originator->queue_write(response);
 }
 
 void game_server::recv_client_tick(tcp_connection* originator)

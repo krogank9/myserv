@@ -33,14 +33,36 @@ void tcp_connection::start()
 	std::cout << "started tcp_connection" << std::endl;
 	message = make_daytime_string();
 
-	boost::asio::async_write(socket_, boost::asio::buffer(message),
+	boost::asio::async_read(socket_, boost::asio::buffer(read_buffer_bytes, read_buffer_size),
+		boost::bind(&tcp_connection::handle_read, this,
+			boost::asio::placeholders::error,
+			boost::asio::placeholders::bytes_transferred));
+}
+
+void tcp_connection::queue_write(arg_stream& msg)
+{
+	boost::asio::async_write(socket_, boost::asio::buffer(msg.get_buffer(), msg.length()),
 		boost::bind(&tcp_connection::handle_write, this,
 			boost::asio::placeholders::error,
 			boost::asio::placeholders::bytes_transferred));
 }
 
-void tcp_connection::handle_write(const boost::system::error_code& /*error*/, size_t /*bytes_transferred*/)
+void tcp_connection::close_connection()
 {
+	socket_.close();
 	if (manager_ptr != NULL)
 		manager_ptr->connection_closed(this);
+}
+
+void tcp_connection::handle_write(const boost::system::error_code& error, size_t /*bytes_transferred*/)
+{
+	if (error != 0)
+		close_connection();
+}
+
+void tcp_connection::handle_read(const boost::system::error_code& error, size_t bytes_transferred)
+{
+	message_reader_.process(read_buffer_bytes, bytes_transferred);
+	if (error != 0)
+		close_connection();
 }

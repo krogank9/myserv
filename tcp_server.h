@@ -19,6 +19,7 @@ using boost::asio::ip::tcp;
 // functions, and when sending replies to client, some functions (movement updating) will use get_fast_connection()
 // TODO: also generalize tcp_connection to websocket/raw tcp by checking first 5 bytes against http req codes
 
+// TODO: all sockets need to be wrapped in a strand
 class tcp_server : public tcp_connection_manager
 {
 public:

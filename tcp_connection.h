@@ -27,13 +27,20 @@ public:
 	tcp::socket& socket();
 	void start();
 
-	void queue_write(arg_stream* msg);
+	void queue_write(arg_stream& msg);
 
 	bool peer_is_server() { return peer_is_server_; }
 	bool peer_is_client() { return !peer_is_server_; }
+
+	void close_connection();
+
 private:
 	std::string make_daytime_string();
 	void handle_write(const boost::system::error_code& /*error*/, size_t /*bytes_transferred*/);
+	void handle_read(const boost::system::error_code& /*error*/, size_t /*bytes_transferred*/);
+
+	char read_buffer_bytes[1024];
+	static const int read_buffer_size = 1024;
 
 	bool peer_is_server_;
 

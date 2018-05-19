@@ -40,7 +40,7 @@ private:
 	void handle_write(const boost::system::error_code& error, size_t /*bytes_transferred*/,
 					  boost::shared_ptr<arg_stream> /*ensure buffer stays in memory till write over*/);
 	void handle_read(const boost::system::error_code& error, size_t bytes_transferred);
-	void handle_timeout();
+	void handle_timeout(const boost::system::error_code& error);
 
 	char read_buffer_bytes[1024];
 	static const int read_buffer_size = 1024;
@@ -56,5 +56,7 @@ private:
 
 	boost::asio::deadline_timer timeout_timer;
 	static const int read_timeout_seconds = 2; //20 sec
+
+	bool already_notified_close;
 };
 #endif // TCP_CONNECTION_H

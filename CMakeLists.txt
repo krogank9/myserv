@@ -13,10 +13,10 @@ find_package(Threads)
 if(Boost_FOUND)
 	include_directories(${Boost_INCLUDE_DIRS})
 
-	#add_executable(tests "main_tests.cpp" "property.h" "arg_stream.h" "fixed_messages.h" "message_reader.cpp" "tcp_connection.cpp" "tcp_server.cpp")
-	#target_link_libraries(tests ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+	add_executable(tests "main_tests.cpp" "property.h" "arg_stream.h" "fixed_messages.h" "message_reader.cpp" "tcp_connection.cpp" "tcp_server.cpp")
+	target_link_libraries(tests ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
-	add_executable(client "main_client.cpp" "tcp_connection.cpp")
+	add_executable(client "main_client.cpp" "tcp_connection.cpp" "message_reader.cpp")
 	target_link_libraries(client ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
 	add_executable(${PROJECT_NAME}
@@ -24,5 +24,5 @@ if(Boost_FOUND)
 		"message_reader.cpp" "game_server.cpp" "property.h"
 		# headers added to compile so Qt Creator will manage them:
 		"arg_stream.h" "fixed_messages.h")
-	#target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
+	target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 endif()

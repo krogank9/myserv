@@ -8,6 +8,7 @@
 
 #include "tcp_connection.h"
 class game_server;
+class tcp_connection_manager;
 
 using boost::asio::ip::tcp;
 

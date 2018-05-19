@@ -18,7 +18,9 @@ tcp_server::~tcp_server()
 
 void tcp_server::start_accept()
 {
-	tcp_connection *new_connection = new tcp_connection(acceptor_.get_io_service(), (message_handler*)parent_game_server_ptr, this);
+	tcp_connection *new_connection = new tcp_connection(acceptor_.get_io_service(),
+														(message_handler*)parent_game_server_ptr,
+														false, this);
 	client_list.insert(new_connection);
 
 	acceptor_.async_accept(new_connection->socket(),
@@ -39,6 +41,10 @@ void tcp_server::handle_accept(tcp_connection *new_connection, const boost::syst
 
 void tcp_server::connection_closed(tcp_connection *c)
 {
-	client_list.erase(c);
-	delete c;
+	std::cout << "connection closed" << std::endl;
+	if (client_list.find(c) != client_list.end())
+	{
+		client_list.erase(c);
+		delete c;
+	}
 }

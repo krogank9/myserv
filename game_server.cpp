@@ -1,5 +1,6 @@
 #include "game_server.h"
 #include "fixed_messages.h"
+#include <boost/make_shared.hpp>
 
 game_server::game_server(boost::asio::io_service& io_service, int port)
 	: my_tcp_server(io_service, port, this)
@@ -18,7 +19,10 @@ bool game_server::call_network_interface(tcp_connection* originator, int msgID, 
 {
 	// call function from message passed over network
 	if (msgID == CMSG_HELLO)
-		recv_client_hello(originator, args.get_string(), args.get_string());
+	{
+		property name = args.get_string();
+		recv_client_hello(originator, name.get_string(), args.get_string());
+	}
 	else if (msgID == CMSG_TICK)
 		recv_client_tick(originator);
 	else
@@ -30,8 +34,10 @@ bool game_server::call_network_interface(tcp_connection* originator, int msgID, 
 void game_server::recv_client_hello(tcp_connection* originator, std::string protocol_name, std::string protocol_version)
 {
 	std::cout << "received CMSG_HELLO: protocol_name(" << protocol_name << "), protocol_version(" << protocol_version << ")" << std::endl;
-	//arg_stream response;
-	//originator->queue_write(response);
+
+	boost::shared_ptr<arg_stream> response = boost::make_shared<arg_stream>();
+	response->put_msg_id(CMSG_TICK);
+	originator->queue_write(response);
 }
 
 void game_server::recv_client_tick(tcp_connection* originator)

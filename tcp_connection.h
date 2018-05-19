@@ -27,7 +27,8 @@ public:
 	tcp::socket& socket();
 	void start();
 
-	void queue_write(arg_stream& msg);
+	void queue_write(boost::shared_ptr<arg_stream> msg);
+	void queue_close_connection();
 
 	bool peer_is_server() { return peer_is_server_; }
 	bool peer_is_client() { return !peer_is_server_; }
@@ -36,8 +37,10 @@ public:
 
 private:
 	std::string make_daytime_string();
-	void handle_write(const boost::system::error_code& /*error*/, size_t /*bytes_transferred*/);
-	void handle_read(const boost::system::error_code& /*error*/, size_t /*bytes_transferred*/);
+	void handle_write(const boost::system::error_code& error, size_t /*bytes_transferred*/,
+					  boost::shared_ptr<arg_stream> /*ensure buffer stays in memory till write over*/);
+	void handle_read(const boost::system::error_code& error, size_t bytes_transferred);
+	void handle_timeout();
 
 	char read_buffer_bytes[1024];
 	static const int read_buffer_size = 1024;
@@ -50,5 +53,8 @@ private:
 	std::string message;
 
 	tcp_connection_manager* manager_ptr;
+
+	boost::asio::deadline_timer timeout_timer;
+	static const int read_timeout_seconds = 2; //20 sec
 };
 #endif // TCP_CONNECTION_H

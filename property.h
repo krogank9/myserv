@@ -43,6 +43,28 @@ public:
 
 	////////////////////////////////////////////////////////////
 
+/*
+	operator uint8_t() const { return get_u8(); }
+	operator uint16_t() const { return get_u16(); }
+	operator uint32_t() const { return get_u32(); }
+	operator uint64_t() const { return get_u64(); }
+
+	operator int8_t() const { return get_8(); }
+	operator int16_t() const { return get_16(); }
+	operator int32_t() const { return get_32(); }
+	operator int64_t() const { return get_64(); }
+
+	operator float() const { return get_float(); }
+	operator double() const { return get_double(); }
+
+	operator std::string() const { return get_string(); }
+	operator std::vector<char>() const { return get_blob(); }
+	operator std::vector<property>() const { return get_array(); }
+	operator std::map<property, property>() const { return get_dict(); }
+*/
+
+	////////////////////////////////////////////////////////////
+
 	bool operator==(const property& rhs) const
 	{
 		if (is_string() && rhs.is_string())

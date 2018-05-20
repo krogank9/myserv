@@ -67,6 +67,14 @@ bool test_property()
 	ASSERT(num.has_point());
 	ASSERT(num == 20.0f);
 
+	DO(property mult = 5);
+	DO(mult *= 5);
+	ASSERT(mult == 25);
+
+	DO(mult = true);
+	ASSERT(mult == true);
+	ASSERT(mult != false);
+
 	PRINT("\ntesting array:\n");
 
 	DO(std::vector<property> vec);

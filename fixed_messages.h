@@ -16,6 +16,7 @@ typedef uint16_t ARRAY_LEN;
 typedef uint16_t BLOB_LEN;
 
 #define ARG_UINT8 0
+#define ARG_BOOL 0
 #define ARG_UINT16 1
 #define ARG_UINT32 2
 #define ARG_UINT64 3

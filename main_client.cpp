@@ -18,19 +18,34 @@ class client_test_handler : public message_handler
 public:
 	client_test_handler()
 	{
-		MAP_MSG_ARGS(msg_args_map, CMSG_HELLO, CMSG_HELLO_ARGS);
-		MAP_MSG_ARGS(msg_args_map, CMSG_TICK, CMSG_TICK_ARGS);
+		init_msg_args();
+		game_update();
 	}
+
 	bool call_network_interface(tcp_connection* originator, int msgID, arg_stream& args)
 	{
 		if (msgID == CMSG_TICK)
 			std::cout << "received tick from server" << std::endl;
 	}
+
 	std::vector<ARG_TYPE>* get_msg_args_by_id(MSG_ID msgID)
 	{
 		return &(msg_args_map[msgID]);
 	}
 
+	void game_update()
+	{
+	}
+
+private:
+	void init_msg_args()
+	{
+		MAP_MSG_ARGS(msg_args_map, CMSG_HELLO, CMSG_HELLO_ARGS);
+		MAP_MSG_ARGS(msg_args_map, CMSG_TICK, CMSG_TICK_ARGS);
+	}
+
+	//boost::asio::deadline_timer update_timer;
+	static const int update_period_ms = 10;
 	std::map< MSG_ID, std::vector<ARG_TYPE> > msg_args_map;
 };
 

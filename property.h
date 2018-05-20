@@ -16,6 +16,8 @@ public:
 
 	property(const property& copy) : cur_type(ARG_UINT8) { set(copy); }
 
+	property(bool v) : cur_type(ARG_UINT8) { set_bool(v); }
+
 	property(uint8_t v) : cur_type(ARG_UINT8) { set_u8(v); }
 	property(uint16_t v) : cur_type(ARG_UINT8) { set_u16(v); }
 	property(uint32_t v) : cur_type(ARG_UINT8) { set_u32(v); }
@@ -45,30 +47,45 @@ public:
 
 	bool operator==(const property& rhs) const
 	{
-		if (is_string() && rhs.is_string())
+		// numbers
+		if (is_number() && rhs.is_number())
+		{
+			if(has_point() || rhs.has_point())
+				return get_double() == rhs.get_double();
+			else if(is_uint() && rhs.is_uint())
+				return get_u64() == rhs.get_u64();
+			else
+				return get_64() == rhs.get_64();
+		}
+		// non numeric
+		else if (is_string() && rhs.is_string())
 			return get_string() == rhs.get_string();
-		else if((is_number() && rhs.is_number()) && (has_point() || rhs.has_point()))
-			return get_double() == rhs.get_double();
-		else if(is_uint() && rhs.is_uint())
-			return get_u64() == rhs.get_u64();
-		else if(is_number() && rhs.is_number())
-			return get_64() == rhs.get_64();
 		else if(is_blob() && rhs.is_blob())
 			return get_blob() == rhs.get_blob();
 		else if(is_array() && rhs.is_array())
 			return get_array() == rhs.get_array();
 		else if(is_dict() && rhs.is_dict())
 			return get_dict() == rhs.get_dict();
-
-		return false;
+		else
+			return false;
 	}
 
 	bool operator!=(const property& rhs) const { return !(*this == rhs); }
 
 	bool operator<(const property& rhs) const
 	{
+		// numbers
+		if (is_number() && rhs.is_number())
+		{
+			if (has_point() || rhs.has_point())
+				return get_double() < rhs.get_double();
+			else if (is_uint() && rhs.is_uint())
+				return get_u64() < rhs.get_u64();
+			else
+				return get_64() < rhs.get_64();
+		}
 		// non numeric
-		if (is_blob() && rhs.is_blob())
+		else if (is_blob() && rhs.is_blob())
 			return get_blob() < rhs.get_blob();
 		else if (is_array() && rhs.is_array())
 			return get_array() < rhs.get_array();
@@ -76,13 +93,6 @@ public:
 			return get_dict() < rhs.get_dict();
 		else if (is_string() && rhs.is_string())
 			return get_string() < rhs.get_string();
-		// numbers
-		else if ((is_number() && rhs.is_number()) && (has_point() || rhs.has_point()))
-			return get_double() < rhs.get_double();
-		else if (is_uint() && rhs.is_uint())
-			return get_u64() < rhs.get_u64();
-		else if (is_number() && rhs.is_number())
-			return get_64() < rhs.get_64();
 		// for std::map sorting
 		else
 			return get_type() < rhs.get_type();
@@ -92,50 +102,57 @@ public:
 	bool operator<=(const property& rhs) const { return *this < rhs || *this == rhs; }
 	bool operator>=(const property& rhs) const { return *this > rhs || *this == rhs; }
 
+	// operators +, -, *, and / can share code:
+	#define PROPERTY_NUM_ONLY_OP(OP)\
+		if (!is_number() || !rhs.is_number())\
+			return property(*this);\
+\
+		property tmp(*this);\
+\
+		if (is_double() || rhs.is_double())\
+			tmp.set_double(get_double() OP rhs.get_double());\
+		else if (is_float() || rhs.is_float())\
+			tmp.set_float(get_float() OP rhs.get_float());\
+		else if (get_type() == rhs.get_type())\
+		{\
+			if (get_type() == ARG_UINT8)\
+				tmp.set_u8(get_u8() OP rhs.get_u8());\
+			else if (get_type() == ARG_UINT16)\
+				tmp.set_u16(get_u16() OP rhs.get_u16());\
+			else if (get_type() == ARG_UINT32)\
+				tmp.set_u32(get_u32() OP rhs.get_u32());\
+			else if (get_type() == ARG_UINT64)\
+				tmp.set_u64(get_u64() OP rhs.get_u64());\
+			else if (get_type() == ARG_INT8)\
+				tmp.set_8(get_8() OP rhs.get_8());\
+			else if (get_type() == ARG_INT16)\
+				tmp.set_16(get_16() OP rhs.get_16());\
+			else if (get_type() == ARG_INT32)\
+				tmp.set_32(get_32() OP rhs.get_32());\
+			else if (get_type() == ARG_INT64)\
+				tmp.set_64(get_64() OP rhs.get_64());\
+		}\
+		else if (is_uint() && rhs.is_uint())\
+			tmp.set_u64(get_u64() OP rhs.get_u64());\
+		else\
+			tmp.set_64(get_64() OP rhs.get_64());\
+\
+		return tmp;
+
 	property operator+(const property& rhs) const
 	{
-		property tmp(*this);
-
 		if (is_string() || rhs.is_string())
-			tmp.set_string(get_string() + rhs.get_string());
-		else if (is_double() || rhs.is_double())
-			tmp.set_double(get_double() + rhs.get_double());
-		else if (is_float() || rhs.is_float())
-			tmp.set_float(get_float() + rhs.get_float());
-		else
-			tmp.set_64(get_64() + rhs.get_64());
+			return property(get_string() + rhs.get_string());
 
-		return tmp;
+		PROPERTY_NUM_ONLY_OP(+);
 	}
-
-	property operator-(const property& rhs) const
-	{
-		if (!is_number() || !rhs.is_number())
-			return property(*this);
-
-		property tmp_lhs(*this);
-		property tmp_rhs(rhs);
-
-		if (is_double() || rhs.is_double())
-		{
-			tmp_lhs = tmp_lhs.get_double();
-			tmp_rhs = -tmp_rhs.get_double();
-		}
-		else if (is_float() || rhs.is_float())
-		{
-			tmp_lhs = tmp_lhs.get_float();
-			tmp_rhs = -tmp_rhs.get_float();
-		}
-		else
-		{
-			tmp_lhs = tmp_lhs.get_64();
-			tmp_rhs = -tmp_rhs.get_64();
-		}
-
-		return tmp_lhs + tmp_rhs;
-	}
+	property operator-(const property& rhs) const { PROPERTY_NUM_ONLY_OP(-); }
+	property operator*(const property& rhs) const { PROPERTY_NUM_ONLY_OP(*); }
+	property operator/(const property& rhs) const { PROPERTY_NUM_ONLY_OP(/); }
 
 	property& operator=(const property& rhs) { set(rhs); return *this; }
+	property& operator*=(const property& rhs) { *this = *this * rhs; return *this; }
+	property& operator/=(const property& rhs) { *this = *this / rhs; return *this; }
 	property& operator+=(const property& rhs) { *this = *this + rhs; return *this; }
 	property& operator-=(const property& rhs) { *this = *this - rhs; return *this; }
 	property& operator++() { *this = *this + property(1); return *this; }
@@ -183,9 +200,7 @@ public:
 			return;
 
 		delete_ptr();
-
 		cur_type = new_type;
-
 		setup_ptr();
 	}
 
@@ -208,26 +223,22 @@ public:
 			set_double(copy.get_double());
 			cur_type = copy.get_type();
 		}
+		// non numeric
 		else if (copy.is_string())
-		{
 			set_string(copy.get_string());
-		}
 		else if (copy.is_blob())
-		{
 			set_blob(copy.get_blob());
-		}
 		else if (copy.is_array())
-		{
 			set_array(copy.get_array());
-		}
 		else if(copy.is_dict())
-		{
 			set_dict(copy.get_dict());
-		}
+
 	}
 
 	void set_float(float f) { set_type(ARG_FLOAT); value.d = (double)f; }
 	void set_double(double d) { set_type(ARG_DOUBLE); value.d = d; }
+
+	void set_bool(bool b) { set_u8(b?0:1); }
 
 	void set_u8(uint8_t u) { set_type(ARG_UINT8); value.u64 = (uint64_t)u; }
 	void set_u16(uint16_t u) { set_type(ARG_UINT16); value.u64 = (uint64_t)u; }
@@ -249,56 +260,40 @@ public:
 
 	////////////////////////////////////////////////////////////
 
+	#define PROPERTY_RETURN_NUM(type)\
+		if (is_int())\
+			return (type)value.i64;\
+		else if (is_uint())\
+			return (type)value.u64;\
+		else if (is_float() || is_double())\
+			return (type)value.d;\
+		else\
+			return 0;
+
+	bool get_bool() const { return get_u8()==0; }
+
 	int8_t get_u8() const { return (uint8_t)get_u64(); }
 	int16_t get_u16() const { return (uint16_t)get_u64(); }
 	int32_t get_u32() const { return (uint32_t)get_u64(); }
-	uint64_t get_u64() const
-	{
-		if (is_int())
-			return (uint64_t)value.i64;
-		else if (is_uint())
-			return value.u64;
-		else if (is_float() || is_double())
-			return (uint64_t)value.d;
-
-		return 0;
-	}
+	uint64_t get_u64() const { PROPERTY_RETURN_NUM(uint64_t); }
 
 	int8_t get_8() const { return (int8_t)get_64(); }
 	int16_t get_16() const { return (int16_t)get_64(); }
 	int32_t get_32() const { return (int32_t)get_64(); }
-	int64_t get_64() const
-	{
-		if (is_int())
-			return value.i64;
-		else if (is_uint())
-			return (int64_t)value.u64;
-		else if (is_float() || is_double())
-			return (int64_t)value.d;
-
-		return 0;
-	}
+	int64_t get_64() const { PROPERTY_RETURN_NUM(int64_t); }
 
 	float get_float() const { return (float)get_double(); }
-	double get_double() const
-	{
-		if (is_int())
-			return (double)value.i64;
-		else if(is_uint())
-			return (double)value.u64;
-		else if(is_float() || is_double())
-			return value.d;
-
-		return 0.0;
-	}
+	double get_double() const { PROPERTY_RETURN_NUM(double); }
 
 	std::string get_string() const
 	{
 		if (!is_string())
 		{
 			std::stringstream s;
-			if (has_point())
+			if (is_double())
 				s << get_double();
+			else if (is_float())
+				s << get_float();
 			else if (is_uint())
 				s << get_u64();
 			else if (is_int())

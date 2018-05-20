@@ -222,7 +222,7 @@ message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE ne
 		return ret;
 	}
 	// CONTAINERS
-	else if (next_type == ARG_ARRAY)
+	else if ( ARG_IS_ARRAY(next_type) )
 	{
 		if (!buffer_can_read(sizeof(ARRAY_LEN)))
 			return NEED_READ_MORE;
@@ -230,11 +230,11 @@ message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE ne
 		read_from_buffer((char*)&len, sizeof(ARRAY_LEN));
 		cur_arg_stream.put_u16(len);
 
-		msg_args_stack.push_back(make_array_args_list(ARG_PROP, len));
+		msg_args_stack.push_back(make_array_args_list(GET_ARRAY_TYPE(next_type), len));
 		msg_args_index_stack.push_back(0);
 		return CONTINUE;
 	}
-	else if (next_type == ARG_DICT)
+	else if ( ARG_IS_DICT(next_type) )
 	{
 		if (!buffer_can_read(sizeof(DICT_LEN)))
 			return NEED_READ_MORE;
@@ -242,7 +242,7 @@ message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE ne
 		read_from_buffer((char*)&len, sizeof(DICT_LEN));
 		cur_arg_stream.put_u16(len);
 
-		msg_args_stack.push_back(make_dict_args_list(ARG_PROP, ARG_PROP, len));
+		msg_args_stack.push_back(make_dict_args_list(GET_DICT_KEY_TYPE(next_type), GET_DICT_VAL_TYPE(next_type), len));
 		msg_args_index_stack.push_back(0);
 
 		return CONTINUE;

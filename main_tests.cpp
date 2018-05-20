@@ -256,8 +256,18 @@ std::vector<property> mr_p_vec;
 property prop_mr_container;
 std::map<property, property> mr_p_map;
 std::vector<char> mr_blob_vec;
+std::vector<property> mr_dub_array;
+std::map<property, property> mr_str_float_dict;
 bool test_message_reader()
 {
+	mr_dub_array.push_back((double)5.5f);
+	mr_dub_array.push_back((double)10.5f);
+	mr_dub_array.push_back((double)100.1f);
+
+	mr_str_float_dict["str1"] = 0.5f;
+	mr_str_float_dict["str2"] = 5.5f;
+	mr_str_float_dict["str3"] = 55.5f;
+
 	mr_p_vec.push_back(123);
 	mr_p_vec.push_back("abc");
 	mr_p_vec.push_back(10.5f);
@@ -298,6 +308,10 @@ bool test_message_reader()
 			container_msg.push_back(ARG_DICT);
 			container_msg.push_back(ARG_BLOB);
 			container_msg.push_back(ARG_PROP);
+			container_msg.push_back(ARG_PROP);
+			container_msg.push_back(ARG_PROP);
+			container_msg.push_back(ARG_ARRAY_DOUBLE);
+			container_msg.push_back(ARG_DICT_STRING_FLOAT);
 		}
 
 		bool call_network_interface(tcp_connection* originator, int msgID, arg_stream& args)
@@ -337,6 +351,10 @@ bool test_message_reader()
 				ASSERT(args.get_dict() == mr_p_map);
 				ASSERT(args.get_blob() == mr_blob_vec);
 				ASSERT(args.get_property() == prop_mr_container);
+				ASSERT(args.get_property() == prop_mr_container);
+				ASSERT(args.get_property() == prop_mr_container);
+				ASSERT(args.get_array(ARG_DOUBLE) == mr_dub_array);
+				ASSERT(args.get_dict(ARG_STRING, ARG_FLOAT) == mr_str_float_dict);
 				ASSERT(args.length() == 0);
 			}
 			return true;
@@ -389,6 +407,10 @@ bool test_message_reader()
 	args.put_dict(mr_p_map);
 	args.put_blob(mr_blob_vec);
 	args.put_property(prop_mr_container);
+	args.put_property(prop_mr_container);
+	args.put_property(prop_mr_container);
+	args.put_array(mr_dub_array, ARG_DOUBLE);
+	args.put_dict(mr_str_float_dict, ARG_STRING, ARG_FLOAT);
 
 	ASSERT( args.length() < MAX_SAFE_ARG_SIZE_BYTES );
 	while ( args.length() > 0 )

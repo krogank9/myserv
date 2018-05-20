@@ -20,7 +20,7 @@ tcp_connection::tcp_connection(boost::asio::io_service& io_service, message_hand
 	  message_reader_(message_handler_ptr, this),
 	  peer_is_server_(peer_is_server_),
 	  manager_ptr(manager_ptr),
-	  timeout_timer(io_service, boost::posix_time::seconds(read_timeout_seconds)),
+	  timeout_timer(io_service),
 	  already_notified_close(false)
 {
 }

@@ -45,29 +45,6 @@ public:
 	/* operators */
 	/*-----------*/
 
-	property& operator[](property elem)
-	{
-		if (is_dict())
-			return (*get_map_ptr())[elem];
-		else if (is_array())
-			return (*get_vector_ptr())[elem.get_u64()];
-		else
-			return *this;
-	}
-
-	property& operator++()
-	{
-		property one_same_type = 1;
-		one_same_type.set_type(get_type());
-		return *this = *this + one_same_type;
-	}
-	property& operator--()
-	{
-		property one_same_type = 1;
-		one_same_type.set_type(get_type());
-		return *this = *this - one_same_type;
-	}
-
 	// == and < share:
 	#define PROPERTY_CMP_OP(OP)\
 		if (is_number() && rhs.is_number())\
@@ -156,6 +133,29 @@ public:
 	property& operator/=(const property& rhs) { return *this = *this / rhs; }
 	property& operator+=(const property& rhs) { return *this = *this + rhs; }
 	property& operator-=(const property& rhs) { return *this = *this - rhs; }
+
+	property& operator[](property elem)
+	{
+		if (is_dict())
+			return (*get_map_ptr())[elem];
+		else if (is_array())
+			return (*get_vector_ptr())[elem.get_u64()];
+		else
+			return *this;
+	}
+
+	property& operator++()
+	{
+		property one_same_type = 1;
+		one_same_type.set_type(get_type());
+		return *this = *this + one_same_type;
+	}
+	property& operator--()
+	{
+		property one_same_type = 1;
+		one_same_type.set_type(get_type());
+		return *this = *this - one_same_type;
+	}
 
 	/*---------------------*/
 	/* handle type changes */
@@ -295,9 +295,7 @@ public:
 			return s.str();
 		}
 		else
-		{
 			return *get_string_ptr();
-		}
 	}
 
 	std::vector<char>& get_blob() const

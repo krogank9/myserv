@@ -9,7 +9,7 @@ TODO
 
 * add UDP + TCP support, each inherits a common network_connection class
 
-	* add websocket support to TCP with websocketpp, check first 5 bytes and transfer control to websocketpp if is http request
+	* add websocket support to TCP with websocketpp, peek first 5 bytes and transfer control to websocketpp if is http request
 
 * template function binding system for registering messages & exposing entity functions to messages
 

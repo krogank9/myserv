@@ -1,11 +1,11 @@
 TODO
 ----
 
-## current:
+#### current:
 
 * get client working to eventually become the client/bot testing lib
 
-## up next:
+#### up next:
 
 * add UDP + TCP support, each inherits a common network_connection class
 
@@ -13,7 +13,7 @@ TODO
 
 * template function binding system for registering messages & exposing entity functions to messages
 
-## eventual:
+#### eventual:
 
 * decide what should be multithreaded, should property class be totally thread safe?
 

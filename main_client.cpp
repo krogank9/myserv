@@ -16,10 +16,11 @@ using namespace std;
 class client_test_handler : public message_handler
 {
 public:
-	client_test_handler()
+	client_test_handler(boost::asio::io_service& io_service)
+		: update_timer(io_service)
 	{
 		init_msg_args();
-		game_update();
+		queue_game_update();
 	}
 
 	bool call_network_interface(tcp_connection* originator, int msgID, arg_stream& args)
@@ -33,8 +34,16 @@ public:
 		return &(msg_args_map[msgID]);
 	}
 
-	void game_update()
+	void queue_game_update()
 	{
+		update_timer.expires_from_now(boost::posix_time::milliseconds(update_period_ms));
+		update_timer.async_wait(boost::bind(&client_test_handler::game_update, this,
+											boost::asio::placeholders::error));
+	}
+
+	void game_update(const boost::system::error_code& /*error*/)
+	{
+		queue_game_update();
 	}
 
 private:
@@ -44,7 +53,7 @@ private:
 		MAP_MSG_ARGS(msg_args_map, CMSG_TICK, CMSG_TICK_ARGS);
 	}
 
-	//boost::asio::deadline_timer update_timer;
+	boost::asio::deadline_timer update_timer;
 	static const int update_period_ms = 10;
 	std::map< MSG_ID, std::vector<ARG_TYPE> > msg_args_map;
 };

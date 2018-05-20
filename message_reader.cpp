@@ -203,18 +203,20 @@ message_reader::READ_RESULT message_reader::read_type_to_args_stream(ARG_TYPE ne
 		int old_wpos = wpos;
 		read_from_buffer((char*)&prop_type, sizeof(ARG_TYPE));
 
-		cur_arg_stream.put_u8(prop_type);
 		if (prop_type == ARG_PROP)
 		{
 			std::cout << "message_reader::read_type_to_args_stream():"
 						 " ERROR, property type cannot be ARG_PROP." << std::endl;
 			return ERROR; // prevent infinite loop here
 		}
+
+		cur_arg_stream.put_u8(prop_type); //preemptively put prop type
+
 		READ_RESULT ret = read_type_to_args_stream(prop_type);
 
 		if (ret == NEED_READ_MORE)
 		{
-			cur_arg_stream.unput(sizeof(prop_type));
+			cur_arg_stream.unput(sizeof(prop_type)); // undo put prop type if couldn't read whole prop in recur
 			rpos = old_rpos;
 			wpos = old_wpos;
 		}

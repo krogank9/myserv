@@ -142,7 +142,7 @@ public:
 
 		PROPERTY_ARITHMETIC_OP(+);
 	}
-
+	
 	property operator-(const property& rhs) const { PROPERTY_ARITHMETIC_OP(-); }
 	property operator*(const property& rhs) const { PROPERTY_ARITHMETIC_OP(*); }
 	property operator/(const property& rhs) const { PROPERTY_ARITHMETIC_OP(/); }
